@@ -8,6 +8,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import jwt_decode from "jwt-decode";
 import axios from "axios";
 import User from "../components/User";
+import {Pressable} from "react-native";
+
 const HomeScreen = () => {
   const navigation = useNavigation();
   const {userId, setUserId} = useContext(UserType);
@@ -32,10 +34,15 @@ const HomeScreen = () => {
             size={24}
             color="black"
           />
+          <Pressable onPress={handleLogout}>
+            <Text style={{marginLeft: 10, color: "black", fontSize: 16}}>
+              Logout
+            </Text>
+          </Pressable>
         </View>
       ),
     });
-  }, []);
+  }, [navigation]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -56,6 +63,17 @@ const HomeScreen = () => {
 
     fetchUsers();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      // Clear the token from AsyncStorage
+      await AsyncStorage.removeItem("authToken");
+      // Navigate back to the Login screen
+      navigation.replace("Login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   console.log("users", users);
   return (
