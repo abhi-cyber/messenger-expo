@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
+const nodemailer = require("nodemailer");
+const smtpTransport = require("nodemailer-smtp-transport");
 
 const app = express();
 const port = 8000;
@@ -36,60 +38,163 @@ app.listen(port, () => {
 const User = require("./models/user");
 const Message = require("./models/message");
 
-//endpoint for registration of the user
+const sendVerificationEmail = (to, otp) => {
+  const transporter = nodemailer.createTransport(
+    smtpTransport({
+      service: "gmail",
+      auth: {
+        user: "abhiraj.dev.work@gmail.com",
+        pass: "aflnlzgaewkkalkd",
+      },
+    })
+  );
 
-app.post("/register", (req, res) => {
+  const mailOptions = {
+    from: "abhiraj.dev.work@gmail.com",
+    to,
+    subject: "Email Verification",
+    text: `Your verification code is: ${otp}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Error sending verification email", error);
+    } else {
+      console.log("Verification email sent", info);
+    }
+  });
+};
+
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000);
+};
+
+const tempUsers = {};
+
+app.post("/register", async (req, res) => {
   const {name, email, password, image} = req.body;
 
-  // create a new User object
-  const newUser = new User({name, email, password, image});
+  try {
+    const existingUser = await User.findOne({email});
 
-  // save the user to the database
-  newUser
-    .save()
-    .then(() => {
-      res.status(200).json({message: "User registered successfully"});
-    })
-    .catch((err) => {
-      console.log("Error registering user", err);
-      res.status(500).json({message: "Error registering the user!"});
+    if (existingUser) {
+      return res.status(400).json({message: "Email already registered"});
+    }
+
+    const otp = generateOTP();
+
+    tempUsers[email] = {
+      name,
+      email,
+      password,
+      image,
+      verificationCode: otp,
+    };
+
+    sendVerificationEmail(email, otp);
+
+    res.status(200).json({
+      message: "Verification email sent. Please check your email for the OTP.",
     });
+  } catch (error) {
+    console.log("Error registering user", error);
+    res.status(500).json({message: "Error registering the user!"});
+  }
 });
 
-//function to create a token for the user
+app.post("/verify-otp", async (req, res) => {
+  const {email, otp} = req.body;
+
+  try {
+    const tempUser = tempUsers[email];
+
+    if (!tempUser) {
+      return res.status(400).json({message: "User not found. Register first."});
+    }
+
+    console.log("Entered OTP:", otp);
+    console.log("Stored OTP:", tempUser.verificationCode);
+
+    // Convert the stored OTP to a string for comparison
+    if (String(tempUser.verificationCode) !== otp) {
+      console.log("Verification failed: Invalid OTP");
+      return res.status(400).json({message: "Invalid OTP"});
+    }
+
+    if (tempUser.isVerified) {
+      console.log("Verification failed: User already verified");
+      return res.status(400).json({message: "User already verified"});
+    }
+
+    const newUser = new User({
+      name: tempUser.name,
+      email: tempUser.email,
+      password: tempUser.password,
+      image: tempUser.image,
+      verificationCode: otp,
+    });
+
+    await newUser.save();
+
+    tempUser.isVerified = true;
+
+    delete tempUsers[email];
+
+    console.log("Verification successful: User registered");
+
+    res.status(200).json({message: "User successfully registered"});
+  } catch (error) {
+    console.error("Error verifying OTP", error);
+    res.status(500).json({message: "Error verifying OTP"});
+  }
+});
+
+app.post("/verify-email", async (req, res) => {
+  const {email, verificationCode} = req.body;
+
+  try {
+    const user = await User.findOne({email, verificationCode});
+
+    if (user) {
+      user.verified = true;
+      await user.save();
+
+      res.status(200).json({message: "Email verified successfully"});
+    } else {
+      res.status(400).json({message: "Invalid verification code"});
+    }
+  } catch (error) {
+    console.log("Error verifying email", error);
+    res.status(500).json({message: "Error verifying email"});
+  }
+});
+
 const createToken = (userId, userName) => {
-  // Set the token payload
   const payload = {
     userId: userId,
     userName: userName,
   };
 
-  // Generate the token with a secret key and expiration time
   const token = jwt.sign(payload, "Q$r2K6W8n!jCW%Zk", {expiresIn: "1h"});
 
   return token;
 };
 
-//endpoint for logging in of that particular user
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
 
-  //check if the email and password are provided
   if (!email || !password) {
     return res
       .status(404)
       .json({message: "Email and the password are required"});
   }
 
-  //check for that user in the database
   User.findOne({email})
     .then((user) => {
       if (!user) {
-        //user not found
         return res.status(404).json({message: "User not found"});
       }
 
-      //compare the provided passwords with the password in the database
       if (user.password !== password) {
         return res.status(404).json({message: "Invalid Password!"});
       }
@@ -103,7 +208,6 @@ app.post("/login", (req, res) => {
     });
 });
 
-//endpoint to access all the users except the user who's is currently logged in!
 app.get("/users/:userId", (req, res) => {
   const loggedInUserId = req.params.userId;
 
@@ -117,33 +221,29 @@ app.get("/users/:userId", (req, res) => {
     });
 });
 
-//endpoint to send a request to a user
 app.post("/friend-request", async (req, res) => {
   const {currentUserId, selectedUserId} = req.body;
 
   try {
-    //update the recepient's friendRequestsArray!
     await User.findByIdAndUpdate(selectedUserId, {
       $push: {freindRequests: currentUserId},
     });
 
-    //update the sender's sentFriendRequests array
     await User.findByIdAndUpdate(currentUserId, {
       $push: {sentFriendRequests: selectedUserId},
     });
 
     res.sendStatus(200);
   } catch (error) {
+    console.log(error);
     res.sendStatus(500);
   }
 });
 
-//endpoint to show all the friend-requests of a particular user
 app.get("/friend-request/:userId", async (req, res) => {
   try {
     const {userId} = req.params;
 
-    //fetch the user document based on the User id
     const user = await User.findById(userId)
       .populate("freindRequests", "name email image")
       .lean();
@@ -157,12 +257,10 @@ app.get("/friend-request/:userId", async (req, res) => {
   }
 });
 
-//endpoint to accept a friend-request of a particular person
 app.post("/friend-request/accept", async (req, res) => {
   try {
     const {senderId, recepientId} = req.body;
 
-    //retrieve the documents of sender and the recipient
     const sender = await User.findById(senderId);
     const recepient = await User.findById(recepientId);
 
@@ -174,7 +272,7 @@ app.post("/friend-request/accept", async (req, res) => {
     );
 
     sender.sentFriendRequests = sender.sentFriendRequests.filter(
-      (request) => request.toString() !== recepientId.toString
+      (request) => request.toString() !== recepientId.toString()
     );
 
     await sender.save();
@@ -187,7 +285,6 @@ app.post("/friend-request/accept", async (req, res) => {
   }
 });
 
-//endpoint to access all the friends of the logged in user!
 app.get("/accepted-friends/:userId", async (req, res) => {
   try {
     const {userId} = req.params;
@@ -205,13 +302,11 @@ app.get("/accepted-friends/:userId", async (req, res) => {
 
 const multer = require("multer");
 
-// Configure multer for handling file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "files/"); // Specify the desired destination folder
+    cb(null, "files/");
   },
   filename: function (req, file, cb) {
-    // Generate a unique filename for the uploaded file
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + "-" + file.originalname);
   },
@@ -219,7 +314,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({storage: storage});
 
-//endpoint to post Messages and store it in the backend
 app.post("/messages", upload.single("imageFile"), async (req, res) => {
   try {
     const {senderId, recepientId, messageType, messageText} = req.body;
@@ -241,14 +335,10 @@ app.post("/messages", upload.single("imageFile"), async (req, res) => {
   }
 });
 
-///endpoint to get the userDetails to design the chat Room header
 app.get("/user/:userId", async (req, res) => {
   try {
     const {userId} = req.params;
-
-    //fetch the user data from the user ID
     const recepientId = await User.findById(userId);
-
     res.json(recepientId);
   } catch (error) {
     console.log(error);
@@ -256,11 +346,9 @@ app.get("/user/:userId", async (req, res) => {
   }
 });
 
-//endpoint to fetch the messages between two users in the chatRoom
 app.get("/messages/:senderId/:recepientId", async (req, res) => {
   try {
     const {senderId, recepientId} = req.params;
-
     const messages = await Message.find({
       $or: [
         {senderId: senderId, recepientId: recepientId},
@@ -275,13 +363,12 @@ app.get("/messages/:senderId/:recepientId", async (req, res) => {
   }
 });
 
-//endpoint to delete the messages!
 app.post("/deleteMessages", async (req, res) => {
   try {
     const {messages} = req.body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({message: "invalid req body!"});
+      return res.status(400).json({message: "Invalid req body!"});
     }
 
     await Message.deleteMany({_id: {$in: messages}});

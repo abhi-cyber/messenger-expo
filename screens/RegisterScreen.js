@@ -1,14 +1,14 @@
+// RegisterScreen.js
+import React, {useState} from "react";
 import {
-  StyleSheet,
-  Text,
   View,
+  Text,
   TextInput,
   KeyboardAvoidingView,
   Pressable,
   Alert,
 } from "react-native";
-import React, {useState} from "react";
-import {useNavigation} from "@react-navigation/native";
+import OtpVerification from "../components/OtpVerification";
 import axios from "axios";
 
 const RegisterScreen = () => {
@@ -16,8 +16,9 @@ const RegisterScreen = () => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [image, setImage] = useState("");
-  const navigation = useNavigation();
-  const handleRegister = () => {
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+
+  const handleRegister = async () => {
     const user = {
       name: name,
       email: email,
@@ -25,130 +26,140 @@ const RegisterScreen = () => {
       image: image,
     };
 
-    // send a POST  request to the backend API to register the user
-    axios
-      .post("http://192.168.1.14:8000/register", user)
-      .then((response) => {
-        console.log(response);
+    try {
+      // Send a POST request to the backend API to initiate registration
+      const response = await axios.post(
+        "http://192.168.1.14:8000/register",
+        user
+      );
+
+      // Check if the registration initiation was successful
+      if (response.status === 200) {
         Alert.alert(
           "Registration successful",
-          "You have been registered Successfully"
+          "You have initiated the registration process. Check your email for the OTP."
         );
-        setName("");
-        setEmail("");
-        setPassword("");
-        setImage("");
-      })
-      .catch((error) => {
+
+        // Show OTP verification component only when initiation is successful
+        setShowOtpVerification(true);
+      } else {
         Alert.alert(
           "Registration Error",
-          "An error occurred while registering"
+          "An error occurred while initiating registration"
         );
-        console.log("registration failed", error);
-      });
+      }
+    } catch (error) {
+      Alert.alert("Registration Error", "An error occurred while registering");
+      console.log("Registration initiation failed", error);
+    }
   };
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: "white",
-        padding: 10,
-        alignItems: "center",
-      }}>
-      <KeyboardAvoidingView>
-        <View
-          style={{
-            marginTop: 100,
-            justifyContent: "center",
-            alignItems: "center",
-          }}>
-          <Text style={{color: "#4A55A2", fontSize: 17, fontWeight: "600"}}>
-            Register
-          </Text>
 
-          <Text style={{fontSize: 17, fontWeight: "600", marginTop: 15}}>
-            Register To your Account
-          </Text>
+  const handleVerificationComplete = async (enteredCode) => {
+    try {
+      // Send the verification code to the backend for validation
+      const verificationResponse = await axios.post(
+        "http://192.168.1.14:8000/verify-otp",
+        {
+          email: email,
+          otp: enteredCode,
+        }
+      );
+
+      // Check if the verification was successful
+      if (verificationResponse.status === 200) {
+        Alert.alert(
+          "Email verified",
+          "Your email has been successfully verified"
+        );
+      } else {
+        Alert.alert(
+          "Verification failed",
+          "Please check your verification code and try again"
+        );
+      }
+    } catch (error) {
+      console.error("Axios error during OTP verification:", error);
+      // Log the error details here
+      Alert.alert(
+        "Verification failed",
+        "An error occurred during OTP verification"
+      );
+    }
+
+    // Reset the state and hide OTP verification component
+    setShowOtpVerification(false);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setImage("");
+  };
+
+  return (
+    <View>
+      <KeyboardAvoidingView>
+        <View>
+          <Text>Register</Text>
+          <Text>Register To your Account</Text>
         </View>
 
-        <View style={{marginTop: 50}}>
-          <View style={{marginTop: 10}}>
-            <Text style={{fontSize: 18, fontWeight: "600", color: "gray"}}>
-              Name
-            </Text>
-
+        <View>
+          <View>
+            <Text>Name</Text>
             <TextInput
               value={name}
               onChangeText={(text) => setName(text)}
               style={{
-                fontSize: email ? 18 : 18,
                 borderBottomColor: "gray",
                 borderBottomWidth: 1,
                 marginVertical: 10,
                 width: 300,
               }}
-              placeholderTextColor={"black"}
               placeholder="Enter your name"
             />
           </View>
 
           <View>
-            <Text style={{fontSize: 18, fontWeight: "600", color: "gray"}}>
-              Email
-            </Text>
-
+            <Text>Email</Text>
             <TextInput
               value={email}
               onChangeText={(text) => setEmail(text)}
               style={{
-                fontSize: email ? 18 : 18,
                 borderBottomColor: "gray",
                 borderBottomWidth: 1,
                 marginVertical: 10,
                 width: 300,
               }}
-              placeholderTextColor={"black"}
               placeholder="enter Your Email"
             />
           </View>
 
-          <View style={{marginTop: 10}}>
-            <Text style={{fontSize: 18, fontWeight: "600", color: "gray"}}>
-              Password
-            </Text>
-
+          <View>
+            <Text>Password</Text>
             <TextInput
               value={password}
               onChangeText={(text) => setPassword(text)}
               secureTextEntry={true}
               style={{
-                fontSize: email ? 18 : 18,
                 borderBottomColor: "gray",
                 borderBottomWidth: 1,
                 marginVertical: 10,
                 width: 300,
               }}
-              placeholderTextColor={"black"}
               placeholder="Passowrd"
             />
           </View>
 
-          <View style={{marginTop: 10}}>
-            <Text style={{fontSize: 18, fontWeight: "600", color: "gray"}}>
-              Image
-            </Text>
-
+          <View>
+            <Text>Image</Text>
             <TextInput
               value={image}
               onChangeText={(text) => setImage(text)}
               style={{
-                fontSize: email ? 18 : 18,
                 borderBottomColor: "gray",
                 borderBottomWidth: 1,
                 marginVertical: 10,
                 width: 300,
               }}
-              placeholderTextColor={"black"}
               placeholder="Image"
             />
           </View>
@@ -183,11 +194,15 @@ const RegisterScreen = () => {
             </Text>
           </Pressable>
         </View>
+
+        {showOtpVerification && (
+          <OtpVerification
+            onCompleteVerification={handleVerificationComplete}
+          />
+        )}
       </KeyboardAvoidingView>
     </View>
   );
 };
 
 export default RegisterScreen;
-
-const styles = StyleSheet.create({});
