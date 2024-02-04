@@ -24,17 +24,20 @@ import EmojiSelector from "react-native-emoji-selector";
 import {UserType} from "../UserContext";
 import {useNavigation, useRoute} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import {io} from "socket.io-client";
+
+const socket = io("http://192.168.1.14:8000");
 
 const ChatMessagesScreen = () => {
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
   const [recepientData, setRecepientData] = useState();
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
   const {recepientId} = route.params;
-  const [message, setMessage] = useState("");
   const {userId, setUserId} = useContext(UserType);
 
   const scrollViewRef = useRef(null);
@@ -94,13 +97,25 @@ const ChatMessagesScreen = () => {
 
     fetchRecepientData();
   }, []);
+
+  useEffect(() => {
+    socket.on("newMessage", (newMessage) => {
+      console.log("Received new message:", newMessage);
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      scrollToBottom();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [setMessages]);
+
   const handleSend = async (messageType, imageUri) => {
     try {
       const formData = new FormData();
       formData.append("senderId", userId);
       formData.append("recepientId", recepientId);
 
-      //if the message type id image or a normal text
       if (messageType === "image") {
         formData.append("messageType", "image");
         formData.append("imageFile", {
@@ -119,10 +134,12 @@ const ChatMessagesScreen = () => {
       });
 
       if (response.ok) {
+        const newMessage = await response.json(); // Parse the response as JSON
         setMessage("");
         setSelectedImage("");
 
-        fetchMessages();
+        // Emit the new message to the server
+        socket.emit("newMessage", JSON.stringify(newMessage));
       }
     } catch (error) {
       console.log("error in sending the message", error);

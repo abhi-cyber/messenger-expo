@@ -5,11 +5,13 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
-
 const app = express();
 const port = 8000;
 const cors = require("cors");
 app.use(cors());
+
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -31,7 +33,28 @@ mongoose
     console.log("Error connecting to MongoDb", err);
   });
 
-app.listen(port, () => {
+// socket.io SETUP
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("newMessage", (response) => {
+    try {
+      const message = JSON.parse(response);
+      console.log("Received new message:", message);
+
+      // Emit the new message to all connected clients
+      io.emit("newMessage", message);
+    } catch (error) {
+      console.error("Error parsing new message:", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("A user disconnected");
+  });
+});
+
+http.listen(port, "0.0.0.0", () => {
   console.log("Server running on port 8000");
 });
 
@@ -328,7 +351,9 @@ app.post("/messages", upload.single("imageFile"), async (req, res) => {
     });
 
     await newMessage.save();
-    res.status(200).json({message: "Message sent Successfully"});
+
+    // Send back the saved message as a response
+    res.status(200).json(newMessage);
   } catch (error) {
     console.log(error);
     res.status(500).json({error: "Internal Server Error"});
@@ -354,7 +379,7 @@ app.get("/messages/:senderId/:recepientId", async (req, res) => {
         {senderId: senderId, recepientId: recepientId},
         {senderId: recepientId, recepientId: senderId},
       ],
-    }).populate("senderId", "_id name");
+    }).populate("senderId", "_id name image");
 
     res.json(messages);
   } catch (error) {
