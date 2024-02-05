@@ -5,7 +5,7 @@ import {
   Text,
   TextInput,
   View,
-  Alert
+  Alert,
 } from "react-native";
 import React, {useState, useEffect} from "react";
 import {useNavigation} from "@react-navigation/native";
@@ -40,7 +40,7 @@ const LoginScreen = () => {
     };
 
     axios
-      .post("http://192.168.1.14:8000/login", user)
+      .post("http://192.168.1.4:8000/login", user)
       .then((response) => {
         console.log(response);
         const token = response.data.token;

@@ -15,7 +15,7 @@ const HomeScreen = () => {
   const {userId, setUserId} = useContext(UserType);
   const [users, setUsers] = useState([]);
   const [userName, setUserName] = useState("");
-  
+
   useEffect(() => {
     const fetchUsers = async () => {
       const token = await AsyncStorage.getItem("authToken");
@@ -25,18 +25,18 @@ const HomeScreen = () => {
       setUserName(decodedToken.userName);
 
       axios
-      .get(`http://192.168.1.14:8000/users/${userId}`)
-      .then((response) => {
+        .get(`http://192.168.1.4:8000/users/${userId}`)
+        .then((response) => {
           setUsers(response.data);
         })
         .catch((error) => {
           console.log("error retrieving users", error);
         });
     };
-    
+
     fetchUsers();
   }, [setUserId]);
-  
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: userId ? `Welcome, ${userName || "Unknown"}` : "",
