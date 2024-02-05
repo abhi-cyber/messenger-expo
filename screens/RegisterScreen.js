@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import OtpVerification from "../components/OtpVerification";
 import axios from "axios";
+import {useNavigation} from "@react-navigation/native";
 
 const RegisterScreen = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +18,8 @@ const RegisterScreen = () => {
   const [password, setPassword] = useState("");
   const [image, setImage] = useState("");
   const [showOtpVerification, setShowOtpVerification] = useState(false);
+
+  const navigation = useNavigation();
 
   const handleRegister = async () => {
     const user = {
