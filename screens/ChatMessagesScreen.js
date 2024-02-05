@@ -312,7 +312,7 @@ const ChatMessagesScreen = () => {
 
           if (item.messageType === "image") {
             const baseUrl =
-              "C:/Users/Abhiraj/Desktop/Company work/messenger/api/files";
+              "Users/Abhiraj/Desktop/Company work/messenger/api/files";
             const imageUrl = item.imageUrl;
             const filename = imageUrl.split("/").pop();
             const source = {uri: baseUrl + filename};
