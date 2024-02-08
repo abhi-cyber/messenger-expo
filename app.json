@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "messenger-project",
-    "slug": "messenger-project",
+    "name": "Knightangle messenger",
+    "slug": "knightangle-messenger",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,9 +19,7 @@
         }
       ]
     ],
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
@@ -29,10 +27,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "package": "com.sudokamal.messengerproject"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "20e89829-1978-44f8-ac01-c1d6cd6764ad"
+      }
     }
   }
 }

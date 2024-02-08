@@ -13,7 +13,7 @@ app.use(cors());
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(passport.initialize());
 const jwt = require("jsonwebtoken");
@@ -41,7 +41,6 @@ io.on("connection", (socket) => {
     try {
       const message = JSON.parse(response);
       console.log("Received new message:", message);
-
       // Emit the new message to all connected clients
       io.emit("newMessage", message);
     } catch (error) {
@@ -95,13 +94,13 @@ const generateOTP = () => {
 const tempUsers = {};
 
 app.post("/register", async (req, res) => {
-  const {name, email, password, image} = req.body;
+  const { name, email, password, image } = req.body;
 
   try {
-    const existingUser = await User.findOne({email});
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      return res.status(400).json({message: "Email already registered"});
+      return res.status(400).json({ message: "Email already registered" });
     }
 
     const otp = generateOTP();
@@ -121,18 +120,20 @@ app.post("/register", async (req, res) => {
     });
   } catch (error) {
     console.log("Error registering user", error);
-    res.status(500).json({message: "Error registering the user!"});
+    res.status(500).json({ message: "Error registering the user!" });
   }
 });
 
 app.post("/verify-otp", async (req, res) => {
-  const {email, otp} = req.body;
+  const { email, otp } = req.body;
 
   try {
     const tempUser = tempUsers[email];
 
     if (!tempUser) {
-      return res.status(400).json({message: "User not found. Register first."});
+      return res
+        .status(400)
+        .json({ message: "User not found. Register first." });
     }
 
     console.log("Entered OTP:", otp);
@@ -141,12 +142,12 @@ app.post("/verify-otp", async (req, res) => {
     // Convert the stored OTP to a string for comparison
     if (String(tempUser.verificationCode) !== otp) {
       console.log("Verification failed: Invalid OTP");
-      return res.status(400).json({message: "Invalid OTP"});
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
     if (tempUser.isVerified) {
       console.log("Verification failed: User already verified");
-      return res.status(400).json({message: "User already verified"});
+      return res.status(400).json({ message: "User already verified" });
     }
 
     const newUser = new User({
@@ -165,30 +166,30 @@ app.post("/verify-otp", async (req, res) => {
 
     console.log("Verification successful: User registered");
 
-    res.status(200).json({message: "User successfully registered"});
+    res.status(200).json({ message: "User successfully registered" });
   } catch (error) {
     console.error("Error verifying OTP", error);
-    res.status(500).json({message: "Error verifying OTP"});
+    res.status(500).json({ message: "Error verifying OTP" });
   }
 });
 
 app.post("/verify-email", async (req, res) => {
-  const {email, verificationCode} = req.body;
+  const { email, verificationCode } = req.body;
 
   try {
-    const user = await User.findOne({email, verificationCode});
+    const user = await User.findOne({ email, verificationCode });
 
     if (user) {
       user.verified = true;
       await user.save();
 
-      res.status(200).json({message: "Email verified successfully"});
+      res.status(200).json({ message: "Email verified successfully" });
     } else {
-      res.status(400).json({message: "Invalid verification code"});
+      res.status(400).json({ message: "Invalid verification code" });
     }
   } catch (error) {
     console.log("Error verifying email", error);
-    res.status(500).json({message: "Error verifying email"});
+    res.status(500).json({ message: "Error verifying email" });
   }
 });
 
@@ -198,62 +199,62 @@ const createToken = (userId, userName) => {
     userName: userName,
   };
 
-  const token = jwt.sign(payload, "Q$r2K6W8n!jCW%Zk", {expiresIn: "1h"});
+  const token = jwt.sign(payload, "Q$r2K6W8n!jCW%Zk", { expiresIn: "1h" });
 
   return token;
 };
 
 app.post("/login", (req, res) => {
-  const {email, password} = req.body;
+  const { email, password } = req.body;
 
   if (!email || !password) {
     return res
       .status(404)
-      .json({message: "Email and the password are required"});
+      .json({ message: "Email and the password are required" });
   }
 
-  User.findOne({email})
+  User.findOne({ email })
     .then((user) => {
       if (!user) {
-        return res.status(404).json({message: "User not found"});
+        return res.status(404).json({ message: "User not found" });
       }
 
       if (user.password !== password) {
-        return res.status(404).json({message: "Invalid Password!"});
+        return res.status(404).json({ message: "Invalid Password!" });
       }
 
       const token = createToken(user._id, user.name);
-      res.status(200).json({token, userName: user.name});
+      res.status(200).json({ token, userName: user.name });
     })
     .catch((error) => {
       console.log("error in finding the user", error);
-      res.status(500).json({message: "Internal server Error!"});
+      res.status(500).json({ message: "Internal server Error!" });
     });
 });
 
 app.get("/users/:userId", (req, res) => {
   const loggedInUserId = req.params.userId;
 
-  User.find({_id: {$ne: loggedInUserId}})
+  User.find({ _id: { $ne: loggedInUserId } })
     .then((users) => {
       res.status(200).json(users);
     })
     .catch((err) => {
       console.log("Error retrieving users", err);
-      res.status(500).json({message: "Error retrieving users"});
+      res.status(500).json({ message: "Error retrieving users" });
     });
 });
 
 app.post("/friend-request", async (req, res) => {
-  const {currentUserId, selectedUserId} = req.body;
+  const { currentUserId, selectedUserId } = req.body;
 
   try {
     await User.findByIdAndUpdate(selectedUserId, {
-      $push: {freindRequests: currentUserId},
+      $push: { freindRequests: currentUserId },
     });
 
     await User.findByIdAndUpdate(currentUserId, {
-      $push: {sentFriendRequests: selectedUserId},
+      $push: { sentFriendRequests: selectedUserId },
     });
 
     res.sendStatus(200);
@@ -265,7 +266,7 @@ app.post("/friend-request", async (req, res) => {
 
 app.get("/friend-request/:userId", async (req, res) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
 
     const user = await User.findById(userId)
       .populate("freindRequests", "name email image")
@@ -276,13 +277,13 @@ app.get("/friend-request/:userId", async (req, res) => {
     res.json(freindRequests);
   } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Internal Server Error"});
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 app.post("/friend-request/accept", async (req, res) => {
   try {
-    const {senderId, recepientId} = req.body;
+    const { senderId, recepientId } = req.body;
 
     const sender = await User.findById(senderId);
     const recepient = await User.findById(recepientId);
@@ -301,16 +302,16 @@ app.post("/friend-request/accept", async (req, res) => {
     await sender.save();
     await recepient.save();
 
-    res.status(200).json({message: "Friend Request accepted successfully"});
+    res.status(200).json({ message: "Friend Request accepted successfully" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({message: "Internal Server Error"});
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 app.get("/accepted-friends/:userId", async (req, res) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
     const user = await User.findById(userId).populate(
       "friends",
       "name email image"
@@ -319,7 +320,7 @@ app.get("/accepted-friends/:userId", async (req, res) => {
     res.json(acceptedFriends);
   } catch (error) {
     console.error(error);
-    res.status(500).json({error: "Internal Server Error"});
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -335,11 +336,11 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({storage: storage});
+const upload = multer({ storage: storage });
 
 app.post("/messages", upload.single("imageFile"), async (req, res) => {
   try {
-    const {senderId, recepientId, messageType, messageText} = req.body;
+    const { senderId, recepientId, messageType, messageText } = req.body;
 
     const newMessage = new Message({
       senderId,
@@ -356,58 +357,58 @@ app.post("/messages", upload.single("imageFile"), async (req, res) => {
     res.status(200).json(newMessage);
   } catch (error) {
     console.log(error);
-    res.status(500).json({error: "Internal Server Error"});
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 app.get("/user/:userId", async (req, res) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
     const recepientId = await User.findById(userId);
     res.json(recepientId);
   } catch (error) {
     console.log(error);
-    res.status(500).json({error: "Internal Server Error"});
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 app.get("/messages/:senderId/:recepientId", async (req, res) => {
   try {
-    const {senderId, recepientId} = req.params;
+    const { senderId, recepientId } = req.params;
     const messages = await Message.find({
       $or: [
-        {senderId: senderId, recepientId: recepientId},
-        {senderId: recepientId, recepientId: senderId},
+        { senderId: senderId, recepientId: recepientId },
+        { senderId: recepientId, recepientId: senderId },
       ],
     }).populate("senderId", "_id name image");
 
     res.json(messages);
   } catch (error) {
     console.log(error);
-    res.status(500).json({error: "Internal Server Error"});
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 app.post("/deleteMessages", async (req, res) => {
   try {
-    const {messages} = req.body;
+    const { messages } = req.body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({message: "Invalid req body!"});
+      return res.status(400).json({ message: "Invalid req body!" });
     }
 
-    await Message.deleteMany({_id: {$in: messages}});
+    await Message.deleteMany({ _id: { $in: messages } });
 
-    res.json({message: "Message deleted successfully"});
+    res.json({ message: "Message deleted successfully" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({error: "Internal Server"});
+    res.status(500).json({ error: "Internal Server" });
   }
 });
 
 app.get("/friend-requests/sent/:userId", async (req, res) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
     const user = await User.findById(userId)
       .populate("sentFriendRequests", "name email image")
       .lean();
@@ -417,19 +418,19 @@ app.get("/friend-requests/sent/:userId", async (req, res) => {
     res.json(sentFriendRequests);
   } catch (error) {
     console.log("error", error);
-    res.status(500).json({error: "Internal Server"});
+    res.status(500).json({ error: "Internal Server" });
   }
 });
 
 app.get("/friends/:userId", (req, res) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
 
     User.findById(userId)
       .populate("friends")
       .then((user) => {
         if (!user) {
-          return res.status(404).json({message: "User not found"});
+          return res.status(404).json({ message: "User not found" });
         }
 
         const friendIds = user.friends.map((friend) => friend._id);
@@ -438,6 +439,6 @@ app.get("/friends/:userId", (req, res) => {
       });
   } catch (error) {
     console.log("error", error);
-    res.status(500).json({message: "internal server error"});
+    res.status(500).json({ message: "internal server error" });
   }
 });
