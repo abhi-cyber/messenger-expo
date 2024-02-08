@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, Pressable, Image } from "react-native";
 import React, { useContext, useState, useEffect } from "react";
 import { UserType } from "../UserContext";
 
-const User = ({ item }) => {
+const UserCard = ({ user }) => {
   const { userId, setUserId } = useContext(UserType);
   const [requestSent, setRequestSent] = useState(false);
   const [friendRequests, setFriendRequests] = useState([]);
@@ -78,15 +78,15 @@ const User = ({ item }) => {
             borderRadius: 25,
             resizeMode: "cover",
           }}
-          source={{ uri: item.image }}
+          source={{ uri: user.image }}
         />
       </View>
 
       <View style={{ marginLeft: 12, flex: 1 }}>
-        <Text style={{ fontWeight: "bold" }}>{item?.name}</Text>
-        <Text style={{ marginTop: 4, color: "gray" }}>{item?.email}</Text>
+        <Text style={{ fontWeight: "bold" }}>{user?.name}</Text>
+        <Text style={{ marginTop: 4, color: "gray" }}>{user?.email}</Text>
       </View>
-      {userFriends.includes(item._id) ? (
+      {userFriends.includes(user._id) ? (
         <Pressable
           style={{
             backgroundColor: "#82CD47",
@@ -98,7 +98,7 @@ const User = ({ item }) => {
           <Text style={{ textAlign: "center", color: "white" }}>Friends</Text>
         </Pressable>
       ) : requestSent ||
-        friendRequests.some((friend) => friend._id === item._id) ? (
+        friendRequests.some((friend) => friend._id === user._id) ? (
         <Pressable
           style={{
             backgroundColor: "gray",
@@ -113,7 +113,7 @@ const User = ({ item }) => {
         </Pressable>
       ) : (
         <Pressable
-          onPress={() => sendFriendRequest(userId, item._id)}
+          onPress={() => sendFriendRequest(userId, user._id)}
           style={{
             backgroundColor: "#567189",
             padding: 10,
@@ -130,6 +130,4 @@ const User = ({ item }) => {
   );
 };
 
-export default User;
-
-const styles = StyleSheet.create({});
+export default UserCard;

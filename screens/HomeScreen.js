@@ -1,20 +1,20 @@
-import { StyleSheet, Text, View } from "react-native";
-import React, { useLayoutEffect, useContext, useEffect, useState } from "react";
+import { Text, View, Pressable } from "react-native";
+import { useLayoutEffect, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { MaterialIcons } from "@expo/vector-icons";
-import { UserType } from "../UserContext";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useUserId } from "../UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import jwt_decode from "jwt-decode";
 import axios from "axios";
-import User from "../components/User";
-import { Pressable } from "react-native";
+import UserCard from "../components/UserCard";
+import { apiUrl, appName } from "../constants/consts";
+import styleUtils, { secondary } from "../constants/style";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { userId, setUserId } = useContext(UserType);
+  const { setUserId } = useUserId();
   const [users, setUsers] = useState([]);
-  const [userName, setUserName] = useState("");
+  // const [userName, setUserName] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -22,10 +22,10 @@ const HomeScreen = () => {
       const decodedToken = jwt_decode(token);
       const userId = decodedToken.userId;
       setUserId(userId);
-      setUserName(decodedToken.userName);
+      // setUserName(decodedToken.userName);
 
       axios
-        .get(`http://34.131.14.35/users/${userId}`)
+        .get(apiUrl + "/users/" + userId)
         .then((response) => {
           setUsers(response.data);
         })
@@ -35,58 +35,64 @@ const HomeScreen = () => {
     };
 
     fetchUsers();
-  }, [setUserId]);
+  }, []);
 
   useLayoutEffect(() => {
+    const handleLogout = async () => {
+      try {
+        // Clear the token from AsyncStorage
+        await AsyncStorage.removeItem("authToken");
+        // Navigate back to the Login screen
+        navigation.replace("Login");
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    };
+
     navigation.setOptions({
-      headerTitle: userId ? `Welcome, ${userName || "Unknown"}` : "",
+      headerTitle: appName,
+      headerStyle: { backgroundColor: secondary },
+      headerTitleStyle: { fontWeight: "600", color: "white" },
       headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
           <Ionicons
             onPress={() => navigation.navigate("Chats")}
             name="chatbox-ellipses-outline"
             size={24}
-            color="black"
+            color="white"
           />
           <MaterialIcons
             onPress={() => navigation.navigate("Friends")}
             name="people-outline"
-            size={24}
-            color="black"
+            size={28}
+            color="white"
           />
           <Pressable onPress={handleLogout}>
-            <Text style={{ marginLeft: 10, color: "black", fontSize: 16 }}>
-              Logout
-            </Text>
+            <Text style={{ color: "white", fontSize: 18 }}>Logout</Text>
           </Pressable>
         </View>
       ),
     });
-  }, [navigation, userId, userName]);
+  }, []);
 
-  const handleLogout = async () => {
-    try {
-      // Clear the token from AsyncStorage
-      await AsyncStorage.removeItem("authToken");
-      // Navigate back to the Login screen
-      navigation.replace("Login");
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
-
-  console.log("users", users);
   return (
-    <View>
-      <View style={{ padding: 10 }}>
-        {users.map((item, index) => (
-          <User key={index} item={item} />
-        ))}
-      </View>
+    <View
+      style={[
+        { marginHorizontal: "auto", padding: 20, flex: 1 },
+        styleUtils.primaryScreen,
+      ]}
+    >
+      {users.map((user, index) => (
+        <UserCard key={index} user={user} />
+      ))}
     </View>
   );
 };
 
 export default HomeScreen;
-
-const styles = StyleSheet.create({});

@@ -9,6 +9,7 @@ import {
   RegisterScreen,
   LoginScreen,
 } from "./screens";
+import RequestAdmin from "./screens/RequestAdmin";
 import { View } from "react-native";
 
 const StackNavigator = () => {
@@ -27,7 +28,7 @@ const StackNavigator = () => {
             component={RegisterScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Home" component={RequestAdmin} />
 
           <Stack.Screen name="Friends" component={FriendsScreen} />
 
