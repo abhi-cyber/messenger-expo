@@ -1,13 +1,20 @@
 import { Text, View, Pressable, Image, TouchableOpacity } from "react-native";
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+// import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appName } from "../constants/consts";
-import styleUtils, { accent, secondary, vw } from "../constants/style";
+import styleUtils, {
+  accent,
+  secondary,
+  tertiary,
+  vw,
+} from "../constants/style";
+import adminIcon from "../assets/admin.png";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [isRequestSent, setIsRequestSent] = useState(false);
 
   useLayoutEffect(() => {
     const handleLogout = async () => {
@@ -33,7 +40,7 @@ const HomeScreen = () => {
             gap: 10,
           }}
         >
-          <Ionicons
+          {/* <Ionicons
             onPress={() => navigation.navigate("Chats")}
             name="chatbox-ellipses-outline"
             size={24}
@@ -44,7 +51,7 @@ const HomeScreen = () => {
             name="people-outline"
             size={28}
             color="white"
-          />
+          /> */}
           <Pressable onPress={handleLogout}>
             <Text style={{ color: "white", fontSize: 18 }}>Logout</Text>
           </Pressable>
@@ -53,14 +60,32 @@ const HomeScreen = () => {
     });
   }, []);
 
+  const handleRequestButton = () => {
+    setIsRequestSent(true);
+  };
+
   return (
     <View style={[styleUtils.container, styleUtils.primaryScreen, { gap: 20 }]}>
-      <Image
-        style={{ height: 180, width: 180, objectFit: "cover" }}
-        source={{
-          uri: "https://avatar.iran.liara.run/public/boy?username=Ash",
+      <View
+        style={{
+          height: 180,
+          width: 180,
+          overflow: "hidden",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "white",
+          borderRadius: 90,
         }}
-      />
+      >
+        <Image
+          style={{
+            height: 205,
+            width: 205,
+            objectFit: "cover",
+          }}
+          source={adminIcon}
+        />
+      </View>
       <Text
         style={{
           color: accent,
@@ -71,26 +96,50 @@ const HomeScreen = () => {
       >
         Request Admin to connect
       </Text>
-      <TouchableOpacity
-        style={{
-          width: vw(50),
-          backgroundColor: secondary,
-          paddingVertical: 15,
-          marginTop: 20,
-          borderRadius: 14,
-        }}
-      >
-        <Text
+      {!isRequestSent ? (
+        <TouchableOpacity
+          onPress={handleRequestButton}
           style={{
-            color: "white",
-            fontSize: 20,
-            fontWeight: "900",
-            textAlign: "center",
+            width: vw(50),
+            backgroundColor: secondary,
+            paddingVertical: 15,
+            marginTop: 20,
+            borderRadius: 14,
           }}
         >
-          Request
-        </Text>
-      </TouchableOpacity>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 20,
+              fontWeight: "900",
+              textAlign: "center",
+            }}
+          >
+            Request Admin
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <Pressable
+          style={{
+            width: vw(50),
+            backgroundColor: tertiary,
+            paddingVertical: 15,
+            marginTop: 20,
+            borderRadius: 14,
+          }}
+        >
+          <Text
+            style={{
+              color: accent,
+              fontSize: 20,
+              fontWeight: "900",
+              textAlign: "center",
+            }}
+          >
+            Request Sent
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 };

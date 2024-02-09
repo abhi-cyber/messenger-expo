@@ -8,8 +8,9 @@ const useUserId = () => {
 
 const UserContext = ({ children }) => {
   const [userId, setUserId] = useState("");
+  const [isApproved, setIsApproved] = useState(false);
   return (
-    <UserType.Provider value={{ userId, setUserId }}>
+    <UserType.Provider value={{ userId, setUserId, isApproved, setIsApproved }}>
       {children}
     </UserType.Provider>
   );

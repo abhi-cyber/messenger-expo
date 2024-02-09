@@ -1,6 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { primary } from "./constants/style";
+import { primary, secondary } from "./constants/style";
 import {
   ChatMessagesScreen,
   ChatsScreen,
@@ -10,13 +10,17 @@ import {
   LoginScreen,
 } from "./screens";
 import RequestAdmin from "./screens/RequestAdmin";
+import { useUserId } from "./UserContext";
 import { View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 const StackNavigator = () => {
   const Stack = createNativeStackNavigator();
+  const { isApproved } = useUserId();
   return (
     <View style={{ flex: 1, backgroundColor: primary }}>
       <NavigationContainer>
+        <StatusBar style="light" />
         <Stack.Navigator>
           <Stack.Screen
             name="Login"
@@ -28,12 +32,12 @@ const StackNavigator = () => {
             component={RegisterScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="Home" component={RequestAdmin} />
-
+          <Stack.Screen
+            name="Home"
+            component={isApproved ? ChatMessagesScreen : RequestAdmin}
+          />
           <Stack.Screen name="Friends" component={FriendsScreen} />
-
           <Stack.Screen name="Chats" component={ChatsScreen} />
-
           <Stack.Screen name="Messages" component={ChatMessagesScreen} />
         </Stack.Navigator>
       </NavigationContainer>

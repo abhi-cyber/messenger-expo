@@ -1,3 +1,3 @@
-const apiUrl = "http://34.131.14.35";
+const apiUrl = "https://api.knightangle.com";
 const appName = "Knightangle";
 export { apiUrl, appName };
