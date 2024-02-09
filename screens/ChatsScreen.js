@@ -12,7 +12,7 @@ const ChatsScreen = () => {
     const acceptedFriendsList = async () => {
       try {
         const response = await fetch(
-          `http://34.131.14.35/accepted-friends/${userId}`
+          `https://api.knightangle.com/accepted-friends/${userId}`
         );
         const data = await response.json();
 

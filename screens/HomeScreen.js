@@ -25,7 +25,7 @@ const HomeScreen = () => {
       setUserName(decodedToken.userName);
 
       axios
-        .get(`http://34.131.14.35/users/${userId}`)
+        .get(`https://api.knightangle.com/users/${userId}`)
         .then((response) => {
           setUsers(response.data);
         })

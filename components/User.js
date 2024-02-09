@@ -11,7 +11,7 @@ const User = ({ item }) => {
     const fetchFriendRequests = async () => {
       try {
         const response = await fetch(
-          `http://34.131.14.35/friend-requests/sent/${userId}`
+          `https://api.knightangle.com/friend-requests/sent/${userId}`
         );
 
         const data = await response.json();
@@ -31,7 +31,7 @@ const User = ({ item }) => {
   useEffect(() => {
     const fetchUserFriends = async () => {
       try {
-        const response = await fetch(`http://34.131.14.35/friends/${userId}`);
+        const response = await fetch(`https://api.knightangle.com/friends/${userId}`);
 
         const data = await response.json();
 
@@ -49,7 +49,7 @@ const User = ({ item }) => {
   }, []);
   const sendFriendRequest = async (currentUserId, selectedUserId) => {
     try {
-      const response = await fetch("http://34.131.14.35/friend-request", {
+      const response = await fetch("https://api.knightangle.com/friend-request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

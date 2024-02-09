@@ -26,7 +26,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
 
-const socket = io("http://34.131.14.35");
+const socket = io("https://api.knightangle.com");
 
 const ChatMessagesScreen = () => {
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
@@ -63,7 +63,7 @@ const ChatMessagesScreen = () => {
   const fetchMessages = async () => {
     try {
       const response = await fetch(
-        `http://34.131.14.35/messages/${userId}/${recepientId}`
+        `https://api.knightangle.com/messages/${userId}/${recepientId}`
       );
       const data = await response.json();
 
@@ -84,7 +84,7 @@ const ChatMessagesScreen = () => {
   useEffect(() => {
     const fetchRecepientData = async () => {
       try {
-        const response = await fetch(`http://34.131.14.35/user/${recepientId}`);
+        const response = await fetch(`https://api.knightangle.com/user/${recepientId}`);
 
         const data = await response.json();
         setRecepientData(data);
@@ -126,7 +126,7 @@ const ChatMessagesScreen = () => {
         formData.append("messageText", message);
       }
 
-      const response = await fetch("http://34.131.14.35/messages", {
+      const response = await fetch("https://api.knightangle.com/messages", {
         method: "POST",
         body: formData,
       });
@@ -201,7 +201,7 @@ const ChatMessagesScreen = () => {
 
   const deleteMessages = async (messageIds) => {
     try {
-      const response = await fetch("http://34.131.14.35/deleteMessages", {
+      const response = await fetch("https://api.knightangle.com/deleteMessages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

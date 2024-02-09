@@ -40,7 +40,7 @@ const LoginScreen = () => {
     };
 
     axios
-      .post("http://34.131.14.35/login", user)
+      .post("https://api.knightangle.com/login", user)
       .then((response) => {
         console.log(response);
         const token = response.data.token;

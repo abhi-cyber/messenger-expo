@@ -9,7 +9,7 @@ const FriendRequest = ({ item, friendRequests, setFriendRequests }) => {
   const acceptRequest = async (friendRequestId) => {
     try {
       const response = await fetch(
-        "http://34.131.14.35/friend-request/accept",
+        "https://api.knightangle.com/friend-request/accept",
         {
           method: "POST",
           headers: {
