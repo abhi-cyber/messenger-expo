@@ -98,6 +98,7 @@ const RegisterScreen = () => {
     setEmail("");
     setPassword("");
     setImage("");
+    isAdmin(false);
   };
 
   return (
