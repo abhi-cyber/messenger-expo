@@ -14,6 +14,7 @@ const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.static("./files"));
 app.use(bodyParser.json());
 app.use(passport.initialize());
 const jwt = require("jsonwebtoken");

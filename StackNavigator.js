@@ -10,13 +10,11 @@ import {
   LoginScreen,
 } from "./screens";
 import RequestAdmin from "./screens/RequestAdmin";
-import { useUserId } from "./UserContext";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
 const StackNavigator = () => {
   const Stack = createNativeStackNavigator();
-  const { isApproved } = useUserId();
   return (
     <View style={{ flex: 1, backgroundColor: primary }}>
       <NavigationContainer>
@@ -32,10 +30,7 @@ const StackNavigator = () => {
             component={RegisterScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen
-            name="Home"
-            component={isApproved ? ChatMessagesScreen : RequestAdmin}
-          />
+          <Stack.Screen name="Home" component={RequestAdmin} />
           <Stack.Screen name="Friends" component={FriendsScreen} />
           <Stack.Screen name="Chats" component={ChatsScreen} />
           <Stack.Screen name="Messages" component={ChatMessagesScreen} />

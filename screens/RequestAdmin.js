@@ -129,6 +129,11 @@ const HomeScreen = () => {
           }}
         >
           <Text
+            onPress={() =>
+              navigation.navigate("Messages", {
+                recepientId: "admin",
+              })
+            }
             style={{
               color: accent,
               fontSize: 20,

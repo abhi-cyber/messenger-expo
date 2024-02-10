@@ -10,9 +10,9 @@ const RegisterScreen = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
   const [phoneNumber, setPhoneNumber] = useState(null);
-  const [userType, setUserType] = useState("");
+  const [userType, setUserType] = useState("Corporate");
+  const [companyName, setCompanyName] = useState("");
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const navigation = useNavigation();
 
@@ -99,6 +99,12 @@ const RegisterScreen = () => {
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
+            phoneNumber={phoneNumber}
+            setPhoneNumber={setPhoneNumber}
+            userType={userType}
+            setUserType={setUserType}
+            companyName={companyName}
+            setCompanyName={setCompanyName}
             handleRegister={handleRegister}
             handleLoginButton={handleLoginButton}
           />
