@@ -21,7 +21,8 @@ const jwt = require("jsonwebtoken");
 
 mongoose
   .connect(
-    "mongodb+srv://abhirajchatrath:abhirajmessenger@cluster0.wsz6c9u.mongodb.net/",
+    // "mongodb+srv://abhirajchatrath:abhirajmessenger@cluster0.wsz6c9u.mongodb.net/",
+    "mongodb+srv://sudo:sudo@sudo.hsw80op.mongodb.net/",
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -194,10 +195,11 @@ app.post("/verify-email", async (req, res) => {
   }
 });
 
-const createToken = (userId, userName) => {
+const createToken = (userId, userName, isAdmin) => {
   const payload = {
-    userId: userId,
-    userName: userName,
+    userId,
+    userName,
+    isAdmin,
   };
 
   const token = jwt.sign(payload, "Q$r2K6W8n!jCW%Zk", { expiresIn: "1h" });
@@ -224,7 +226,7 @@ app.post("/login", (req, res) => {
         return res.status(404).json({ message: "Invalid Password!" });
       }
 
-      const token = createToken(user._id, user.name);
+      const token = createToken(user._id, user.name, user.isAdmin);
       res.status(200).json({ token, userName: user.name });
     })
     .catch((error) => {
@@ -233,17 +235,31 @@ app.post("/login", (req, res) => {
     });
 });
 
-app.get("/users/:userId", (req, res) => {
+app.get("/users/:userId", async (req, res) => {
   const loggedInUserId = req.params.userId;
 
-  User.find({ _id: { $ne: loggedInUserId } })
-    .then((users) => {
-      res.status(200).json(users);
-    })
-    .catch((err) => {
-      console.log("Error retrieving users", err);
-      res.status(500).json({ message: "Error retrieving users" });
-    });
+  try {
+    const loggedInUser = await User.findById(loggedInUserId);
+
+    if (!loggedInUser)
+      return res.status(404).json({ message: "User not found" });
+
+    let usersQuery = {};
+
+    if (loggedInUser.isAdmin) {
+      // If the logged-in user is an admin, retrieve all users except the logged-in one
+      usersQuery = { _id: { $ne: loggedInUserId } };
+    } else {
+      // If the logged-in user is not an admin, retrieve only admin users
+      usersQuery = { isAdmin: true, _id: { $ne: loggedInUserId } };
+    }
+
+    const users = await User.find(usersQuery);
+    res.status(200).json(users);
+  } catch (error) {
+    console.log("Error retrieving users", error);
+    res.status(500).json({ message: "Error retrieving users" });
+  }
 });
 
 app.post("/friend-request", async (req, res) => {

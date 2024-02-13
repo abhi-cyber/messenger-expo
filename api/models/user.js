@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
+    required: false,
   },
   freindRequests: [
     {
@@ -35,9 +35,12 @@ const userSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
 });
 
+const User = mongoose.model("User", userSchema);
 
-const User = mongoose.model("User",userSchema);
-
-module.exports = User
+module.exports = User;

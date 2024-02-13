@@ -14,10 +14,12 @@ const RegisterScreen = () => {
   const [userType, setUserType] = useState("Corporate");
   const [companyName, setCompanyName] = useState("");
   const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigation = useNavigation();
 
   const handleRegister = async () => {
-    const user = { name, email, password };
+    const user = { name, email, password, isAdmin };
+    console.log(user);
 
     try {
       // Send a POST request to the backend API to initiate registration
@@ -75,7 +77,7 @@ const RegisterScreen = () => {
     setPassword("");
     setPhoneNumber(null);
     setUserType("");
-    setImageUrl("");
+    setIsAdmin(false);
   };
 
   const handleLoginButton = () => {
@@ -105,6 +107,8 @@ const RegisterScreen = () => {
             setUserType={setUserType}
             companyName={companyName}
             setCompanyName={setCompanyName}
+            isAdmin={isAdmin}
+            setIsAdmin={setIsAdmin}
             handleRegister={handleRegister}
             handleLoginButton={handleLoginButton}
           />

@@ -1,20 +1,45 @@
-import { Text, View, Pressable, Image, TouchableOpacity } from "react-native";
-import { useLayoutEffect, useState } from "react";
+import { Text, View, Pressable } from "react-native";
+import { useLayoutEffect, useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 // import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appName } from "../constants/consts";
-import styleUtils, {
-  accent,
-  secondary,
-  tertiary,
-  vw,
-} from "../constants/style";
-import adminIcon from "../assets/admin.png";
+import styleUtils, { secondary } from "../constants/style";
+import jwt_decode from "jwt-decode";
+import { AdminCard, UserCard } from "../components/Home";
+import { useUserId } from "../UserContext";
+import axios from "axios";
+import { apiUrl } from "../constants/consts";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { setUserId } = useUserId();
   const [isRequestSent, setIsRequestSent] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isAdmin, setIsAdmin] = useState();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const token = await AsyncStorage.getItem("authToken");
+      const decodedToken = jwt_decode(token);
+      const userId = decodedToken.userId;
+      const isAdmin = decodedToken.isAdmin || false;
+      setIsAdmin(isAdmin);
+      setUserId(userId);
+      // setUserName(decodedToken.userName);
+
+      axios
+        .get(apiUrl + "/users/" + userId)
+        .then((response) => {
+          setUsers(response.data);
+        })
+        .catch((error) => {
+          console.log("error retrieving users", error);
+        });
+    };
+
+    fetchUsers();
+  }, []);
 
   useLayoutEffect(() => {
     const handleLogout = async () => {
@@ -64,89 +89,36 @@ const HomeScreen = () => {
     setIsRequestSent(true);
   };
 
-  return (
-    <View style={[styleUtils.container, styleUtils.primaryScreen, { gap: 20 }]}>
+  if (isAdmin) {
+    return (
       <View
-        style={{
-          height: 180,
-          width: 180,
-          overflow: "hidden",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "white",
-          borderRadius: 90,
-        }}
+        style={[
+          styleUtils.container,
+          styleUtils.primaryScreen,
+          { gap: 20, justifyContent: "flex-start" },
+        ]}
       >
-        <Image
-          style={{
-            height: 205,
-            width: 205,
-            objectFit: "cover",
-          }}
-          source={adminIcon}
-        />
+        {users.map((user, index) => (
+          <UserCard key={index} index={index} user={user} />
+        ))}
       </View>
-      <Text
-        style={{
-          color: accent,
-          fontSize: 35,
-          fontWeight: "700",
-          textAlign: "center",
-        }}
+    );
+  } else {
+    return (
+      <View
+        style={[styleUtils.container, styleUtils.primaryScreen, { gap: 20 }]}
       >
-        Request Admin to connect
-      </Text>
-      {!isRequestSent ? (
-        <TouchableOpacity
-          onPress={handleRequestButton}
-          style={{
-            width: vw(50),
-            backgroundColor: secondary,
-            paddingVertical: 15,
-            marginTop: 20,
-            borderRadius: 14,
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 20,
-              fontWeight: "900",
-              textAlign: "center",
-            }}
-          >
-            Request Admin
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <Pressable
-          style={{
-            width: vw(50),
-            backgroundColor: tertiary,
-            paddingVertical: 15,
-            marginTop: 20,
-            borderRadius: 14,
-          }}
-        >
-          <Text
-            onPress={() =>
-              navigation.navigate("Messages", {
-                recepientId: "admin",
-              })
-            }
-            style={{
-              color: accent,
-              fontSize: 20,
-              fontWeight: "900",
-              textAlign: "center",
-            }}
-          >
-            Request Sent
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  );
+        {users.map((user, index) => (
+          <AdminCard
+            key={index}
+            admin={user}
+            isRequestSent={isRequestSent}
+            handleRequestButton={handleRequestButton}
+          />
+        ))}
+      </View>
+    );
+  }
 };
 
 export default HomeScreen;

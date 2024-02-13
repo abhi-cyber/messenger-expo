@@ -5,7 +5,7 @@ import styleUtils, {
   accent,
   vw,
 } from "../../constants/style";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
 
 const Register = ({
   name,
@@ -22,6 +22,8 @@ const Register = ({
   setCompanyName,
   handleRegister,
   handleLoginButton,
+  isAdmin,
+  setIsAdmin,
 }) => {
   const [isNextSlide, SetIsNextSlide] = useState(false);
   return (
@@ -60,6 +62,15 @@ const Register = ({
             placeholderTextColor={accent}
             placeholder="Enter Your Email"
           />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
+            <Text style={[styleUtils.SubText, { color: secondary }]}>
+              Register as Admin?
+            </Text>
+            <Switch
+              value={isAdmin}
+              onValueChange={(value) => setIsAdmin(value)}
+            />
+          </View>
           <Text style={[styleUtils.SubText, { color: secondary }]}>
             Password
           </Text>
@@ -163,8 +174,8 @@ const Register = ({
                 Company Name
               </Text>
               <TextInput
-                value={name}
-                onChangeText={(text) => setName(text)}
+                value={companyName}
+                onChangeText={(text) => setCompanyName(text)}
                 style={[
                   styleUtils.SubText,
                   {

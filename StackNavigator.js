@@ -1,11 +1,10 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { primary, secondary } from "./constants/style";
+import { primary } from "./constants/style";
 import {
   ChatMessagesScreen,
   ChatsScreen,
   FriendsScreen,
-  HomeScreen,
   RegisterScreen,
   LoginScreen,
 } from "./screens";
