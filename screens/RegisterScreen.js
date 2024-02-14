@@ -1,5 +1,5 @@
 // RegisterScreen.js
-import React, { useState } from "react";
+import React, {useState} from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import OtpVerification from "../components/OtpVerification";
 import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
+import {useNavigation} from "@react-navigation/native";
 
 const RegisterScreen = () => {
   const [email, setEmail] = useState("");
@@ -31,7 +31,7 @@ const RegisterScreen = () => {
 
     try {
       // Send a POST request to the backend API to initiate registration
-      const response = await axios.post("https://api.knightangle.com/register", user);
+      const response = await axios.post("http://10.0.64.229/register", user);
 
       // Check if the registration initiation was successful
       if (response.status === 200) {
@@ -58,7 +58,7 @@ const RegisterScreen = () => {
     try {
       // Send the verification code to the backend for validation
       const verificationResponse = await axios.post(
-        "https://api.knightangle.com/verify-otp",
+        "http://10.0.64.229/verify-otp",
         {
           email: email,
           otp: enteredCode,
@@ -174,25 +174,22 @@ const RegisterScreen = () => {
               marginLeft: "auto",
               marginRight: "auto",
               borderRadius: 6,
-            }}
-          >
+            }}>
             <Text
               style={{
                 color: "white",
                 fontSize: 16,
                 fontWeight: "bold",
                 textAlign: "center",
-              }}
-            >
+              }}>
               Register
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => navigation.goBack()}
-            style={{ marginTop: 15 }}
-          >
-            <Text style={{ textAlign: "center", color: "gray", fontSize: 16 }}>
+            style={{marginTop: 15}}>
+            <Text style={{textAlign: "center", color: "gray", fontSize: 16}}>
               Already Have an account? Sign in
             </Text>
           </Pressable>

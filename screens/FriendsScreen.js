@@ -1,11 +1,11 @@
-import { StyleSheet, Text, View } from "react-native";
-import React, { useEffect, useContext, useState } from "react";
+import {StyleSheet, Text, View} from "react-native";
+import React, {useEffect, useContext, useState} from "react";
 import axios from "axios";
-import { UserType } from "../UserContext";
+import {UserType} from "../UserContext";
 import FriendRequest from "../components/FriendRequest";
 
 const FriendsScreen = () => {
-  const { userId, setUserId } = useContext(UserType);
+  const {userId, setUserId} = useContext(UserType);
   const [friendRequests, setFriendRequests] = useState([]);
   useEffect(() => {
     fetchFriendRequests();
@@ -14,7 +14,7 @@ const FriendsScreen = () => {
   const fetchFriendRequests = async () => {
     try {
       const response = await axios.get(
-        `https://api.knightangle.com/friend-request/${userId}`
+        `http://10.0.64.229/friend-request/${userId}`
       );
       if (response.status === 200) {
         const friendRequestsData = response.data.map((friendRequest) => ({
@@ -33,7 +33,7 @@ const FriendsScreen = () => {
 
   console.log(friendRequests);
   return (
-    <View style={{ padding: 10, marginHorizontal: 12 }}>
+    <View style={{padding: 10, marginHorizontal: 12}}>
       {friendRequests.length > 0 && <Text>Your Friend Requests!</Text>}
 
       {friendRequests.map((item, index) => (

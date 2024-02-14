@@ -192,10 +192,11 @@ app.post("/verify-email", async (req, res) => {
   }
 });
 
-const createToken = (userId, userName) => {
+const createToken = (userId, userName, isAdmin) => {
   const payload = {
     userId: userId,
     userName: userName,
+    isAdmin: isAdmin,
   };
 
   const token = jwt.sign(payload, "Q$r2K6W8n!jCW%Zk", {expiresIn: "1h"});
@@ -222,8 +223,9 @@ app.post("/login", (req, res) => {
         return res.status(404).json({message: "Invalid Password!"});
       }
 
-      const token = createToken(user._id, user.name);
-      res.status(200).json({token, userName: user.name});
+      const {_id, name, isAdmin} = user;
+      const token = createToken(_id, name, isAdmin);
+      res.status(200).json({token, userName: user.name, isAdmin});
     })
     .catch((error) => {
       console.log("error in finding the user", error);
