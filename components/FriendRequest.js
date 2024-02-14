@@ -8,7 +8,7 @@ const FriendRequest = ({item, friendRequests, setFriendRequests}) => {
   const navigation = useNavigation();
   const acceptRequest = async (friendRequestId) => {
     try {
-      const response = await fetch("http://10.0.64.229/friend-request/accept", {
+      const response = await fetch("http://10.0.64.229:8000/friend-request/accept", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
