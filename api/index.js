@@ -231,32 +231,17 @@ app.post("/login", (req, res) => {
     });
 });
 
-app.get("/users/:userId", async (req, res) => {
+app.get("/users/:userId", (req, res) => {
   const loggedInUserId = req.params.userId;
 
-  try {
-    const loggedInUser = await User.findById(loggedInUserId);
-
-    if (!loggedInUser) {
-      return res.status(404).json({message: "User not found"});
-    }
-
-    let usersQuery = {};
-
-    if (loggedInUser.isAdmin) {
-      // If the logged-in user is an admin, retrieve all users except the logged-in one
-      usersQuery = {_id: {$ne: loggedInUserId}};
-    } else {
-      // If the logged-in user is not an admin, retrieve only admin users
-      usersQuery = {isAdmin: true, _id: {$ne: loggedInUserId}};
-    }
-
-    const users = await User.find(usersQuery);
-    res.status(200).json(users);
-  } catch (error) {
-    console.log("Error retrieving users", error);
-    res.status(500).json({message: "Error retrieving users"});
-  }
+  User.find({_id: {$ne: loggedInUserId}})
+    .then((users) => {
+      res.status(200).json(users);
+    })
+    .catch((err) => {
+      console.log("Error retrieving users", err);
+      res.status(500).json({message: "Error retrieving users"});
+    });
 });
 
 app.post("/friend-request", async (req, res) => {
