@@ -1,26 +1,24 @@
 import { StyleSheet, Text, View, Pressable, Image } from "react-native";
-import React, { useContext } from "react";
-import { UserType } from "../UserContext";
+import { useUserId } from "../UserContext";
 import { useNavigation } from "@react-navigation/native";
+import { apiUrl } from "../constants/consts";
 
 const FriendRequest = ({ item, friendRequests, setFriendRequests }) => {
-  const { userId, setUserId } = useContext(UserType);
+  const { userId } = useUserId();
   const navigation = useNavigation();
+
   const acceptRequest = async (friendRequestId) => {
     try {
-      const response = await fetch(
-        "http://34.131.14.35/friend-request/accept",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            senderId: friendRequestId,
-            recepientId: userId,
-          }),
-        }
-      );
+      const response = await fetch(apiUrl + "/friend-request/accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          senderId: friendRequestId,
+          recepientId: userId,
+        }),
+      });
 
       if (response.ok) {
         setFriendRequests(

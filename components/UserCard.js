@@ -1,17 +1,21 @@
-import { StyleSheet, Text, View, Pressable, Image } from "react-native";
-import React, { useContext, useState, useEffect } from "react";
-import { UserType } from "../UserContext";
+import { Text, View, Pressable, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { useUserId } from "../UserContext";
+import { apiUrl } from "../constants/consts";
+import { io } from "socket.io-client";
 
 const UserCard = ({ user }) => {
-  const { userId, setUserId } = useContext(UserType);
+  const { userId } = useUserId();
   const [requestSent, setRequestSent] = useState(false);
   const [friendRequests, setFriendRequests] = useState([]);
   const [userFriends, setUserFriends] = useState([]);
+  const socket = io(apiUrl);
+
   useEffect(() => {
     const fetchFriendRequests = async () => {
       try {
         const response = await fetch(
-          `http://34.131.14.35/friend-requests/sent/${userId}`
+          apiUrl + "/friend-requests/sent/" + userId
         );
 
         const data = await response.json();
@@ -25,13 +29,9 @@ const UserCard = ({ user }) => {
       }
     };
 
-    fetchFriendRequests();
-  }, []);
-
-  useEffect(() => {
     const fetchUserFriends = async () => {
       try {
-        const response = await fetch(`http://34.131.14.35/friends/${userId}`);
+        const response = await fetch(apiUrl + "/friends/" + userId);
 
         const data = await response.json();
 
@@ -45,11 +45,27 @@ const UserCard = ({ user }) => {
       }
     };
 
+    fetchFriendRequests();
     fetchUserFriends();
-  }, []);
+    // Listen for the event when a friend request is accepted
+    socket.on("friendRequestAccepted", ({ senderId, recepientId }) => {
+      // Check if the accepted friend request involves the current user
+      if (userId === senderId || userId === recepientId) {
+        // Refresh the friend list or update the state as necessary
+        fetchFriendRequests(); // Call the function to fetch friend requests again
+        fetchUserFriends(); // Call the function to fetch user friends again
+      }
+    });
+
+    // Clean up the socket listener when component unmounts
+    return () => {
+      socket.off("friendRequestAccepted");
+    };
+  }, [userId]); // Make sure to include userId in the dependency array
+
   const sendFriendRequest = async (currentUserId, selectedUserId) => {
     try {
-      const response = await fetch("http://34.131.14.35/friend-request", {
+      const response = await fetch(apiUrl + "/friend-request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

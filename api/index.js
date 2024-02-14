@@ -318,6 +318,7 @@ app.post("/friend-request/accept", async (req, res) => {
 
     await sender.save();
     await recepient.save();
+    io.emit("friendRequestAccepted", { senderId, recepientId });
 
     res.status(200).json({ message: "Friend Request accepted successfully" });
   } catch (error) {

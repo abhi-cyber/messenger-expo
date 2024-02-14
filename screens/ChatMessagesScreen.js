@@ -6,6 +6,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
 import { apiUrl } from "../constants/consts";
+import { useUserId } from "../UserContext";
 import adminAvatar from "../assets/admin.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styleUtils, {
@@ -43,7 +44,7 @@ const ChatMessagesScreen = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
   const { recepientId } = route.params;
-  const { userId, setUserId } = useContext(UserType);
+  const { userId } = useUserId();
 
   const scrollViewRef = useRef(null);
 
@@ -68,7 +69,7 @@ const ChatMessagesScreen = () => {
   const fetchMessages = async () => {
     try {
       const response = await fetch(
-        `http://34.131.14.35/messages/${userId}/${recepientId}`
+        apiUrl + `/messages/${userId}/${recepientId}`
       );
       const data = await response.json();
 
@@ -89,7 +90,7 @@ const ChatMessagesScreen = () => {
   useEffect(() => {
     const fetchRecepientData = async () => {
       try {
-        const response = await fetch(`http://34.131.14.35/user/${recepientId}`);
+        const response = await fetch(apiUrl + `/user/${recepientId}`);
 
         const data = await response.json();
         setRecepientData(data);
@@ -131,7 +132,7 @@ const ChatMessagesScreen = () => {
         formData.append("messageText", message);
       }
 
-      const response = await fetch("http://34.131.14.35/messages", {
+      const response = await fetch(apiUrl + "/messages", {
         method: "POST",
         body: formData,
       });

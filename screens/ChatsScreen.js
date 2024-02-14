@@ -3,17 +3,17 @@ import React, { useContext, useEffect, useState } from "react";
 import { UserType } from "../UserContext";
 import { useNavigation } from "@react-navigation/native";
 import UserChat from "../components/UserChat";
+import { useUserId } from "../UserContext";
+import { apiUrl } from "../constants/consts";
 
 const ChatsScreen = () => {
   const [acceptedFriends, setAcceptedFriends] = useState([]);
-  const { userId, setUserId } = useContext(UserType);
+  const { userId } = useUserId();
   const navigation = useNavigation();
   useEffect(() => {
     const acceptedFriendsList = async () => {
       try {
-        const response = await fetch(
-          `http://34.131.14.35/accepted-friends/${userId}`
-        );
+        const response = await fetch(apiUrl + `/accepted-friends/${userId}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -39,5 +39,3 @@ const ChatsScreen = () => {
 };
 
 export default ChatsScreen;
-
-const styles = StyleSheet.create({});

@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useContext, useState } from "react";
 import axios from "axios";
-import { UserType } from "../UserContext";
+import { useUserId } from "../UserContext";
 import FriendRequest from "../components/FriendRequest";
+import { apiUrl } from "../constants/consts";
 
 const FriendsScreen = () => {
-  const { userId, setUserId } = useContext(UserType);
+  const { userId } = useUserId();
   const [friendRequests, setFriendRequests] = useState([]);
   useEffect(() => {
     fetchFriendRequests();
@@ -13,9 +14,7 @@ const FriendsScreen = () => {
 
   const fetchFriendRequests = async () => {
     try {
-      const response = await axios.get(
-        `http://34.131.14.35/friend-request/${userId}`
-      );
+      const response = await axios.get(apiUrl + `/friend-request/${userId}`);
       if (response.status === 200) {
         const friendRequestsData = response.data.map((friendRequest) => ({
           _id: friendRequest._id,
@@ -49,5 +48,3 @@ const FriendsScreen = () => {
 };
 
 export default FriendsScreen;
-
-const styles = StyleSheet.create({});
