@@ -29,7 +29,8 @@ const HomeScreen = () => {
         .get(`http://10.0.64.229:8000/users/${userId}`)
         .then((response) => {
           if (isAdmin) {
-            setUsers(response.data);
+            const allUsers = response.data;
+            setUsers(allUsers);
           } else {
             const filteredUsers = response.data.filter((user) => user.isAdmin);
             setUsers(filteredUsers);
