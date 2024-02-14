@@ -17,7 +17,7 @@ import React, {
 } from "react";
 import {Feather} from "@expo/vector-icons";
 import {Ionicons} from "@expo/vector-icons";
-import {FontAwesome, FontAwesome5} from "@expo/vector-icons";
+import {FontAwesome} from "@expo/vector-icons";
 import {MaterialIcons} from "@expo/vector-icons";
 import {Entypo} from "@expo/vector-icons";
 import EmojiSelector from "react-native-emoji-selector";
@@ -25,11 +25,6 @@ import {UserType} from "../UserContext";
 import {useNavigation, useRoute} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {io} from "socket.io-client";
-import {
-  RTCPeerConnection,
-  RTCSessionDescription,
-  RTCIceCandidate,
-} from "react-native-webrtc";
 
 const socket = io("http://192.168.1.4:8000");
 
@@ -115,80 +110,6 @@ const ChatMessagesScreen = () => {
     };
   }, [setMessages]);
 
-  const handlePhoneCall = async () => {
-    try {
-      // Initialize WebRTC peer connection
-      const configuration = {}; // You can specify configuration options here
-      const peerConnection = new RTCPeerConnection(configuration);
-
-      // Add event listeners for ICE candidates and negotiation needed
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          // Send ICE candidate to the other user via signaling server
-          socket.emit("iceCandidate", {candidate: event.candidate});
-        }
-      };
-
-      peerConnection.onnegotiationneeded = async () => {
-        try {
-          // Create SDP offer
-          const offer = await peerConnection.createOffer();
-          await peerConnection.setLocalDescription(offer);
-
-          // Send SDP offer to the other user via signaling server
-          socket.emit("offer", {offer});
-        } catch (error) {
-          console.error("Error creating SDP offer:", error);
-        }
-      };
-
-      // Add local stream (if necessary)
-      // const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      // stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-
-      // Handle incoming SDP offers, ICE candidates, and SDP answers from the other user via signaling server
-      socket.on("offer", async ({offer}) => {
-        try {
-          // Set remote description
-          await peerConnection.setRemoteDescription(
-            new RTCSessionDescription(offer)
-          );
-
-          // Create SDP answer
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-
-          // Send SDP answer to the other user via signaling server
-          socket.emit("answer", {answer});
-        } catch (error) {
-          console.error("Error creating SDP answer:", error);
-        }
-      });
-
-      socket.on("answer", async ({answer}) => {
-        try {
-          // Set remote description
-          await peerConnection.setRemoteDescription(
-            new RTCSessionDescription(answer)
-          );
-        } catch (error) {
-          console.error("Error setting remote description:", error);
-        }
-      });
-
-      socket.on("iceCandidate", async ({candidate}) => {
-        try {
-          // Add ICE candidate received from the other user
-          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (error) {
-          console.error("Error adding ICE candidate:", error);
-        }
-      });
-    } catch (error) {
-      console.error("Error initializing peer connection:", error);
-    }
-  };
-
   const handleSend = async (messageType, imageUri) => {
     try {
       const formData = new FormData();
@@ -237,6 +158,7 @@ const ChatMessagesScreen = () => {
             size={24}
             color="black"
           />
+
           {selectedMessages.length > 0 ? (
             <View>
               <Text style={{fontSize: 16, fontWeight: "500"}}>
@@ -260,12 +182,6 @@ const ChatMessagesScreen = () => {
               </Text>
             </View>
           )}
-          <FontAwesome5
-            onPress={handlePhoneCall}
-            name="phone-alt"
-            size={24}
-            color="black"
-          />
         </View>
       ),
       headerRight: () =>

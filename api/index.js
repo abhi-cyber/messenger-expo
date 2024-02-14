@@ -33,23 +33,20 @@ mongoose
     console.log("Error connecting to MongoDb", err);
   });
 
-// Socket.io setup
+// socket.io SETUP
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  socket.on("offer", (data) => {
-    // Broadcast SDP offer to the other user
-    socket.broadcast.emit("offer", data);
-  });
+  socket.on("newMessage", (response) => {
+    try {
+      const message = JSON.parse(response);
+      console.log("Received new message:", message);
 
-  socket.on("answer", (data) => {
-    // Broadcast SDP answer to the other user
-    socket.broadcast.emit("answer", data);
-  });
-
-  socket.on("iceCandidate", (data) => {
-    // Broadcast ICE candidate to the other user
-    socket.broadcast.emit("iceCandidate", data);
+      // Emit the new message to all connected clients
+      io.emit("newMessage", message);
+    } catch (error) {
+      console.error("Error parsing new message:", error);
+    }
   });
 
   socket.on("disconnect", () => {
@@ -234,8 +231,7 @@ app.post("/login", (req, res) => {
     });
 });
 
-app.get("/users/:userId", (req, res) => {
-  // async
+app.get("/users/:userId", (req, res) => { // async
   const loggedInUserId = req.params.userId;
 
   User.find({_id: {$ne: loggedInUserId}})
