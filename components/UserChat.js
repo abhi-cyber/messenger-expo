@@ -1,16 +1,16 @@
-import {StyleSheet, Text, View, Pressable, Image} from "react-native";
-import React, {useContext, useEffect, useState} from "react";
-import {useNavigation} from "@react-navigation/native";
-import {UserType} from "../UserContext";
+import { StyleSheet, Text, View, Pressable, Image } from "react-native";
+import React, { useContext, useEffect, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { UserType } from "../UserContext";
 
-const UserChat = ({item}) => {
-  const {userId, setUserId} = useContext(UserType);
+const UserChat = ({ item }) => {
+  const { userId, setUserId } = useContext(UserType);
   const [messages, setMessages] = useState([]);
   const navigation = useNavigation();
   const fetchMessages = async () => {
     try {
       const response = await fetch(
-        `http://192.168.1.4:8000/messages/${userId}/${item._id}`
+        `https://api.knightangle.com/messages/${userId}/${item._id}`
       );
       const data = await response.json();
 
@@ -41,7 +41,7 @@ const UserChat = ({item}) => {
   const lastMessage = getLastMessage();
   console.log(lastMessage);
   const formatTime = (time) => {
-    const options = {hour: "numeric", minute: "numeric"};
+    const options = { hour: "numeric", minute: "numeric" };
     return new Date(time).toLocaleString("en-US", options);
   };
   return (
@@ -61,23 +61,24 @@ const UserChat = ({item}) => {
         borderLeftWidth: 0,
         borderRightWidth: 0,
         padding: 10,
-      }}>
+      }}
+    >
       <Image
-        style={{width: 50, height: 50, borderRadius: 25, resizeMode: "cover"}}
-        source={{uri: item?.image}}
+        style={{ width: 50, height: 50, borderRadius: 25, resizeMode: "cover" }}
+        source={{ uri: item?.image }}
       />
 
-      <View style={{flex: 1}}>
-        <Text style={{fontSize: 15, fontWeight: "500"}}>{item?.name}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontWeight: "500" }}>{item?.name}</Text>
         {lastMessage && (
-          <Text style={{marginTop: 3, color: "gray", fontWeight: "500"}}>
+          <Text style={{ marginTop: 3, color: "gray", fontWeight: "500" }}>
             {lastMessage?.message}
           </Text>
         )}
       </View>
 
       <View>
-        <Text style={{fontSize: 11, fontWeight: "400", color: "#585858"}}>
+        <Text style={{ fontSize: 11, fontWeight: "400", color: "#585858" }}>
           {lastMessage && formatTime(lastMessage?.timeStamp)}
         </Text>
       </View>

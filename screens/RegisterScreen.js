@@ -35,7 +35,7 @@ const RegisterScreen = () => {
     try {
       // Send a POST request to the backend API to initiate registration
       const response = await axios.post(
-        "http://192.168.1.4:8000/register",
+        "https://api.knightangle.com/register",
         user
       );
 
@@ -64,7 +64,7 @@ const RegisterScreen = () => {
     try {
       // Send the verification code to the backend for validation
       const verificationResponse = await axios.post(
-        "http://192.168.1.4:8000/verify-otp",
+        "https://api.knightangle.com/verify-otp",
         {
           email: email,
           otp: enteredCode,

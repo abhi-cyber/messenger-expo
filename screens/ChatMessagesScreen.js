@@ -15,18 +15,18 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import {Feather} from "@expo/vector-icons";
-import {Ionicons} from "@expo/vector-icons";
-import {FontAwesome} from "@expo/vector-icons";
-import {MaterialIcons} from "@expo/vector-icons";
-import {Entypo} from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Entypo } from "@expo/vector-icons";
 import EmojiSelector from "react-native-emoji-selector";
-import {UserType} from "../UserContext";
-import {useNavigation, useRoute} from "@react-navigation/native";
+import { UserType } from "../UserContext";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import {io} from "socket.io-client";
+import { io } from "socket.io-client";
 
-const socket = io("http://192.168.1.4:8000");
+const socket = io("https://api.knightangle.com");
 
 const ChatMessagesScreen = () => {
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
@@ -37,8 +37,8 @@ const ChatMessagesScreen = () => {
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
-  const {recepientId} = route.params;
-  const {userId, setUserId} = useContext(UserType);
+  const { recepientId } = route.params;
+  const { userId, setUserId } = useContext(UserType);
 
   const scrollViewRef = useRef(null);
 
@@ -48,7 +48,7 @@ const ChatMessagesScreen = () => {
 
   const scrollToBottom = () => {
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToEnd({animated: false});
+      scrollViewRef.current.scrollToEnd({ animated: false });
     }
   };
 
@@ -63,7 +63,7 @@ const ChatMessagesScreen = () => {
   const fetchMessages = async () => {
     try {
       const response = await fetch(
-        `http://192.168.1.4:8000/messages/${userId}/${recepientId}`
+        `https://api.knightangle.com/messages/${userId}/${recepientId}`
       );
       const data = await response.json();
 
@@ -84,9 +84,7 @@ const ChatMessagesScreen = () => {
   useEffect(() => {
     const fetchRecepientData = async () => {
       try {
-        const response = await fetch(
-          `http://192.168.1.4:8000/user/${recepientId}`
-        );
+        const response = await fetch(`https://api.knightangle.com/user/${recepientId}`);
 
         const data = await response.json();
         setRecepientData(data);
@@ -128,7 +126,7 @@ const ChatMessagesScreen = () => {
         formData.append("messageText", message);
       }
 
-      const response = await fetch("http://192.168.1.4:8000/messages", {
+      const response = await fetch("https://api.knightangle.com/messages", {
         method: "POST",
         body: formData,
       });
@@ -151,7 +149,7 @@ const ChatMessagesScreen = () => {
     navigation.setOptions({
       headerTitle: "",
       headerLeft: () => (
-        <View style={{flexDirection: "row", alignItems: "center", gap: 10}}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <Ionicons
             onPress={() => navigation.goBack()}
             name="arrow-back"
@@ -161,12 +159,12 @@ const ChatMessagesScreen = () => {
 
           {selectedMessages.length > 0 ? (
             <View>
-              <Text style={{fontSize: 16, fontWeight: "500"}}>
+              <Text style={{ fontSize: 16, fontWeight: "500" }}>
                 {selectedMessages.length}
               </Text>
             </View>
           ) : (
-            <View style={{flexDirection: "row", alignItems: "center"}}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Image
                 style={{
                   width: 30,
@@ -174,10 +172,10 @@ const ChatMessagesScreen = () => {
                   borderRadius: 15,
                   resizeMode: "cover",
                 }}
-                source={{uri: recepientData?.image}}
+                source={{ uri: recepientData?.image }}
               />
 
-              <Text style={{marginLeft: 5, fontSize: 15, fontWeight: "bold"}}>
+              <Text style={{ marginLeft: 5, fontSize: 15, fontWeight: "bold" }}>
                 {recepientData?.name}
               </Text>
             </View>
@@ -186,7 +184,7 @@ const ChatMessagesScreen = () => {
       ),
       headerRight: () =>
         selectedMessages.length > 0 ? (
-          <View style={{flexDirection: "row", alignItems: "center", gap: 10}}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Ionicons name="md-arrow-redo-sharp" size={24} color="black" />
             <Ionicons name="md-arrow-undo" size={24} color="black" />
             <FontAwesome name="star" size={24} color="black" />
@@ -203,12 +201,12 @@ const ChatMessagesScreen = () => {
 
   const deleteMessages = async (messageIds) => {
     try {
-      const response = await fetch("http://192.168.1.4:8000/deleteMessages", {
+      const response = await fetch("https://api.knightangle.com/deleteMessages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({messages: messageIds}),
+        body: JSON.stringify({ messages: messageIds }),
       });
 
       if (response.ok) {
@@ -225,7 +223,7 @@ const ChatMessagesScreen = () => {
     }
   };
   const formatTime = (time) => {
-    const options = {hour: "numeric", minute: "numeric"};
+    const options = { hour: "numeric", minute: "numeric" };
     return new Date(time).toLocaleString("en-US", options);
   };
   const pickImage = async () => {
@@ -257,11 +255,12 @@ const ChatMessagesScreen = () => {
     }
   };
   return (
-    <KeyboardAvoidingView style={{flex: 1, backgroundColor: "#F0F0F0"}}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#F0F0F0" }}>
       <ScrollView
         ref={scrollViewRef}
-        contentContainerStyle={{flexGrow: 1}}
-        onContentSizeChange={handleContentSizeChange}>
+        contentContainerStyle={{ flexGrow: 1 }}
+        onContentSizeChange={handleContentSizeChange}
+      >
         {messages.map((item, index) => {
           if (item.messageType === "text") {
             const isSelected = selectedMessages.includes(item._id);
@@ -288,13 +287,15 @@ const ChatMessagesScreen = () => {
                         maxWidth: "60%",
                       },
 
-                  isSelected && {width: "100%", backgroundColor: "#F0FFFF"},
-                ]}>
+                  isSelected && { width: "100%", backgroundColor: "#F0FFFF" },
+                ]}
+              >
                 <Text
                   style={{
                     fontSize: 13,
                     textAlign: isSelected ? "right" : "left",
-                  }}>
+                  }}
+                >
                   {item?.message}
                 </Text>
                 <Text
@@ -303,7 +304,8 @@ const ChatMessagesScreen = () => {
                     fontSize: 9,
                     color: "gray",
                     marginTop: 5,
-                  }}>
+                  }}
+                >
                   {formatTime(item.timeStamp)}
                 </Text>
               </Pressable>
@@ -315,7 +317,7 @@ const ChatMessagesScreen = () => {
               "Users/Abhiraj/Desktop/Company work/messenger/api/files";
             const imageUrl = item.imageUrl;
             const filename = imageUrl.split("/").pop();
-            const source = {uri: baseUrl + filename};
+            const source = { uri: baseUrl + filename };
             return (
               <Pressable
                 key={index}
@@ -337,11 +339,12 @@ const ChatMessagesScreen = () => {
                         borderRadius: 7,
                         maxWidth: "60%",
                       },
-                ]}>
+                ]}
+              >
                 <View>
                   <Image
                     source={source}
-                    style={{width: 200, height: 200, borderRadius: 7}}
+                    style={{ width: 200, height: 200, borderRadius: 7 }}
                   />
                   <Text
                     style={{
@@ -352,7 +355,8 @@ const ChatMessagesScreen = () => {
                       bottom: 7,
                       color: "white",
                       marginTop: 5,
-                    }}>
+                    }}
+                  >
                     {formatTime(item?.timeStamp)}
                   </Text>
                 </View>
@@ -371,10 +375,11 @@ const ChatMessagesScreen = () => {
           borderTopWidth: 1,
           borderTopColor: "#dddddd",
           marginBottom: showEmojiSelector ? 0 : 25,
-        }}>
+        }}
+      >
         <Entypo
           onPress={handleEmojiPress}
-          style={{marginRight: 5}}
+          style={{ marginRight: 5 }}
           name="emoji-happy"
           size={24}
           color="gray"
@@ -400,7 +405,8 @@ const ChatMessagesScreen = () => {
             alignItems: "center",
             gap: 7,
             marginHorizontal: 8,
-          }}>
+          }}
+        >
           <Entypo onPress={pickImage} name="camera" size={24} color="gray" />
 
           <Feather name="mic" size={24} color="gray" />
@@ -413,8 +419,9 @@ const ChatMessagesScreen = () => {
             paddingVertical: 8,
             paddingHorizontal: 12,
             borderRadius: 20,
-          }}>
-          <Text style={{color: "white", fontWeight: "bold"}}>Send</Text>
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>Send</Text>
         </Pressable>
       </View>
 
@@ -423,7 +430,7 @@ const ChatMessagesScreen = () => {
           onEmojiSelected={(emoji) => {
             setMessage((prevMessage) => prevMessage + emoji);
           }}
-          style={{height: 250}}
+          style={{ height: 250 }}
         />
       )}
     </KeyboardAvoidingView>
