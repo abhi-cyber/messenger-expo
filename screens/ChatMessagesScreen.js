@@ -268,7 +268,7 @@ const ChatMessagesScreen = () => {
                 onLongPress={() => handleSelectMessage(item)}
                 key={index}
                 style={[
-                  item?.senderId?._id === userId
+                  item?.senderId == userId
                     ? {
                         alignSelf: "flex-end",
                         backgroundColor: "#DCF8C6",
