@@ -19,6 +19,10 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
+      const isAdminString = await AsyncStorage.getItem("isAdmin");
+      const isAdmin = JSON.parse(isAdminString);
+      setIsAdmin(isAdmin);
+
       const token = await AsyncStorage.getItem("authToken");
       const decodedToken = jwt_decode(token);
       const userId = decodedToken.userId;
@@ -40,14 +44,7 @@ const HomeScreen = () => {
         });
     };
 
-    const fetchIsAdmin = async () => {
-      const isAdminString = await AsyncStorage.getItem("isAdmin");
-      const isAdmin = JSON.parse(isAdminString);
-      setIsAdmin(isAdmin);
-    };
-
     fetchUsers();
-    fetchIsAdmin();
   }, [setUserId]);
 
   useLayoutEffect(() => {
