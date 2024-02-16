@@ -2,11 +2,36 @@ import {StyleSheet, Text, View, Pressable, Image} from "react-native";
 import React, {useContext, useEffect, useState} from "react";
 import {useNavigation} from "@react-navigation/native";
 import {UserType} from "../UserContext";
+import io from "socket.io-client";
 
 const UserChat = ({item}) => {
   const {userId, setUserId} = useContext(UserType);
   const [messages, setMessages] = useState([]);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const socket = io("http://192.168.1.14:8000");
+
+    // Listen for new messages
+    socket.on("newMessage", (message) => {
+      if (
+        (message.senderId === userId && message.recepientId === item._id) ||
+        (message.senderId === item._id && message.recepientId === userId)
+      ) {
+        // Update messages state with the new message
+        setMessages((prevMessages) => [...prevMessages, message]);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
   const fetchMessages = async () => {
     try {
       const response = await fetch(
@@ -23,11 +48,6 @@ const UserChat = ({item}) => {
       console.log("error fetching messages", error);
     }
   };
-
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-  console.log(messages);
 
   const getLastMessage = () => {
     const userMessages = messages.filter(
