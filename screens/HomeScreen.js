@@ -30,7 +30,7 @@ const HomeScreen = () => {
       setUserName(decodedToken.userName);
 
       axios
-        .get(`http://10.0.64.229:8000/users/${userId}`)
+        .get(`http://192.168.1.14:8000/users/${userId}`)
         .then((response) => {
           if (isAdmin) {
             setUsers(response.data);

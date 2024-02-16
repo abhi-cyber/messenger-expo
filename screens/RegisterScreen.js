@@ -31,7 +31,10 @@ const RegisterScreen = () => {
 
     try {
       // Send a POST request to the backend API to initiate registration
-      const response = await axios.post("http://10.0.64.229:8000/register", user);
+      const response = await axios.post(
+        "http://192.168.1.14:8000/register",
+        user
+      );
 
       // Check if the registration initiation was successful
       if (response.status === 200) {
@@ -58,7 +61,7 @@ const RegisterScreen = () => {
     try {
       // Send the verification code to the backend for validation
       const verificationResponse = await axios.post(
-        "http://10.0.64.229:8000/verify-otp",
+        "http://192.168.1.14:8000/verify-otp",
         {
           email: email,
           otp: enteredCode,
