@@ -96,7 +96,7 @@ const generateOTP = () => {
 const tempUsers = {};
 
 app.post("/register", async (req, res) => {
-  const { name, email, password, image } = req.body;
+  const { name, email, password } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -111,7 +111,6 @@ app.post("/register", async (req, res) => {
       name,
       email,
       password,
-      image,
       verificationCode: otp,
     };
 
@@ -156,7 +155,6 @@ app.post("/verify-otp", async (req, res) => {
       name: tempUser.name,
       email: tempUser.email,
       password: tempUser.password,
-      image: tempUser.image,
       verificationCode: otp,
     });
 
@@ -266,15 +264,27 @@ app.post("/friend-request", async (req, res) => {
   const { currentUserId, selectedUserId } = req.body;
 
   try {
-    await User.findByIdAndUpdate(selectedUserId, {
-      $push: { freindRequests: currentUserId },
-    });
+    User.findById(currentUserId)
+      .populate("friends")
+      .then(async (user) => {
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
 
-    await User.findByIdAndUpdate(currentUserId, {
-      $push: { sentFriendRequests: selectedUserId },
-    });
+        const friendIds = user.friends.map((friend) => friend._id);
+        if (!friendIds.some((friend) => friend == selectedUserId)) {
+          await User.findByIdAndUpdate(selectedUserId, {
+            $push: { freindRequests: currentUserId },
+          });
 
-    res.sendStatus(200);
+          await User.findByIdAndUpdate(currentUserId, {
+            $push: { sentFriendRequests: selectedUserId },
+          });
+
+          res.sendStatus(200);
+        }
+        console.log("already friends");
+      });
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
@@ -286,7 +296,7 @@ app.get("/friend-request/:userId", async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findById(userId)
-      .populate("freindRequests", "name email image")
+      .populate("freindRequests", "name email")
       .lean();
 
     const freindRequests = user.freindRequests;
@@ -330,10 +340,7 @@ app.post("/friend-request/accept", async (req, res) => {
 app.get("/accepted-friends/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate(
-      "friends",
-      "name email image"
-    );
+    const user = await User.findById(userId).populate("friends", "name email");
     const acceptedFriends = user.friends;
     res.json(acceptedFriends);
   } catch (error) {
@@ -428,7 +435,7 @@ app.get("/friend-requests/sent/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const user = await User.findById(userId)
-      .populate("sentFriendRequests", "name email image")
+      .populate("sentFriendRequests", "name email")
       .lean();
 
     const sentFriendRequests = user.sentFriendRequests;

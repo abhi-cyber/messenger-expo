@@ -3,6 +3,8 @@ import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiUrl } from "../constants/consts";
+import { useUserId } from "../UserContext";
+import jwt_decode from "jwt-decode";
 import styleUtils, {
   secondary,
   tertiary,
@@ -21,6 +23,7 @@ import {
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { setUserId } = useUserId();
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -44,9 +47,10 @@ const LoginScreen = () => {
     axios
       .post(apiUrl + "/login", user)
       .then((response) => {
-        // console.log(response);
         const token = response.data.token;
         AsyncStorage.setItem("authToken", token);
+        const decodedToken = jwt_decode(token);
+        setUserId(decodedToken.userId);
         navigation.replace("Home");
       })
       .catch((error) => {
@@ -72,7 +76,7 @@ const LoginScreen = () => {
           <Text style={[styleUtils.SubText, { color: secondary }]}>Email</Text>
           <TextInput
             value={email}
-            onChangeText={(text) => setEmail(text)}
+            onChangeText={(text) => setEmail(text.toLowerCase())}
             style={[
               styleUtils.SubText,
               {

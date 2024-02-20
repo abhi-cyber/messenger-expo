@@ -5,7 +5,7 @@ import styleUtils, {
   accent,
   vw,
 } from "../../constants/style";
-import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 
 const Register = ({
   name,
@@ -14,6 +14,8 @@ const Register = ({
   setEmail,
   password,
   setPassword,
+  confirmPassword,
+  setConfirmPassword,
   phoneNumber,
   setPhoneNumber,
   userType,
@@ -22,13 +24,11 @@ const Register = ({
   setCompanyName,
   handleRegister,
   handleLoginButton,
-  isAdmin,
-  setIsAdmin,
 }) => {
-  const [isNextSlide, SetIsNextSlide] = useState(false);
+  const [slide, setSlide] = useState(1);
   return (
     <View style={{ marginTop: 60, gap: 20, width: vw(75) }}>
-      {!isNextSlide ? (
+      {slide == 1 && (
         <>
           <Text style={[styleUtils.SubText, { color: secondary }]}>Name</Text>
           <TextInput
@@ -49,7 +49,7 @@ const Register = ({
           <Text style={[styleUtils.SubText, { color: secondary }]}>Email</Text>
           <TextInput
             value={email}
-            onChangeText={(text) => setEmail(text)}
+            onChangeText={(text) => setEmail(text.toLowerCase())}
             style={[
               styleUtils.SubText,
               {
@@ -62,22 +62,12 @@ const Register = ({
             placeholderTextColor={accent}
             placeholder="Enter Your Email"
           />
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
-            <Text style={[styleUtils.SubText, { color: secondary }]}>
-              Register as Admin?
-            </Text>
-            <Switch
-              value={isAdmin}
-              onValueChange={(value) => setIsAdmin(value)}
-            />
-          </View>
           <Text style={[styleUtils.SubText, { color: secondary }]}>
-            Password
+            Phone Number
           </Text>
           <TextInput
-            value={password}
-            onChangeText={(text) => setPassword(text)}
-            secureTextEntry={true}
+            value={phoneNumber}
+            onChangeText={(text) => setPhoneNumber(text)}
             style={[
               styleUtils.SubText,
               {
@@ -88,10 +78,10 @@ const Register = ({
               },
             ]}
             placeholderTextColor={accent}
-            placeholder="Password"
+            placeholder="Enter Your Phone Number"
           />
           <TouchableOpacity
-            onPress={() => SetIsNextSlide(true)}
+            onPress={() => setSlide(2)}
             style={{
               width: "100%",
               backgroundColor: tertiary,
@@ -114,26 +104,9 @@ const Register = ({
             </Text>
           </TouchableOpacity>
         </>
-      ) : (
+      )}
+      {slide == 2 && (
         <>
-          <Text style={[styleUtils.SubText, { color: secondary }]}>
-            Phone Number
-          </Text>
-          <TextInput
-            value={phoneNumber}
-            onChangeText={(text) => setPhoneNumber(text)}
-            style={[
-              styleUtils.SubText,
-              {
-                borderBottomColor: tertiary,
-                borderBottomWidth: 2,
-                paddingVertical: 10,
-                color: "white",
-              },
-            ]}
-            placeholderTextColor={accent}
-            placeholder="Enter Your Phone Number"
-          />
           <View style={{ flexDirection: "row", gap: 26, marginVertical: 10 }}>
             <Text
               onPress={() => setUserType("Corporate")}
@@ -190,7 +163,71 @@ const Register = ({
               />
             </>
           )}
-
+          <TouchableOpacity
+            onPress={() => setSlide(3)}
+            style={{
+              width: "100%",
+              backgroundColor: tertiary,
+              paddingVertical: 15,
+              marginTop: 20,
+              borderWidth: 2,
+              borderColor: secondary,
+              borderRadius: 14,
+            }}
+          >
+            <Text
+              style={{
+                color: accent,
+                fontSize: 20,
+                fontWeight: "900",
+                textAlign: "center",
+              }}
+            >
+              Next
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+      {slide == 3 && (
+        <>
+          <Text style={[styleUtils.SubText, { color: secondary }]}>
+            Password
+          </Text>
+          <TextInput
+            value={password}
+            onChangeText={(text) => setPassword(text)}
+            // secureTextEntry={true}
+            style={[
+              styleUtils.SubText,
+              {
+                borderBottomColor: tertiary,
+                borderBottomWidth: 2,
+                paddingVertical: 10,
+                color: "white",
+              },
+            ]}
+            placeholderTextColor={accent}
+            placeholder="Password"
+          />
+          <Text style={[styleUtils.SubText, { color: secondary }]}>
+            Confirm Password
+          </Text>
+          <TextInput
+            value={confirmPassword}
+            onChangeText={(text) => setConfirmPassword(text)}
+            secureTextEntry={true}
+            style={[
+              styleUtils.SubText,
+              {
+                borderBottomColor: tertiary,
+                borderBottomWidth: 2,
+                paddingVertical: 10,
+                color: "white",
+              },
+            ]}
+            placeholderTextColor={accent}
+            placeholder="Confirm Password"
+          />
           <TouchableOpacity
             onPress={handleRegister}
             style={{

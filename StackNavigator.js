@@ -3,12 +3,11 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { primary } from "./constants/style";
 import {
   ChatMessagesScreen,
-  ChatsScreen,
-  FriendsScreen,
   RegisterScreen,
   LoginScreen,
+  HomeScreen,
+  RequestsScreen,
 } from "./screens";
-import RequestAdmin from "./screens/RequestAdmin";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
@@ -29,9 +28,8 @@ const StackNavigator = () => {
             component={RegisterScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="Home" component={RequestAdmin} />
-          <Stack.Screen name="Friends" component={FriendsScreen} />
-          <Stack.Screen name="Chats" component={ChatsScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Request" component={RequestsScreen} />
           <Stack.Screen name="Messages" component={ChatMessagesScreen} />
         </Stack.Navigator>
       </NavigationContainer>

@@ -1,7 +1,5 @@
 import { Feather } from "@expo/vector-icons";
 import { Entypo } from "@expo/vector-icons";
-import EmojiSelector from "react-native-emoji-selector";
-import { UserType } from "../UserContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
@@ -9,12 +7,7 @@ import { apiUrl } from "../constants/consts";
 import { useUserId } from "../UserContext";
 import adminAvatar from "../assets/admin.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import styleUtils, {
-  accent,
-  secondary,
-  tertiary,
-  vw,
-} from "../constants/style";
+import styleUtils, { accent, secondary } from "../constants/style";
 import {
   Text,
   View,
@@ -24,18 +17,11 @@ import {
   Pressable,
   Image,
 } from "react-native";
-import React, {
-  useState,
-  useContext,
-  useLayoutEffect,
-  useEffect,
-  useRef,
-} from "react";
+import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 
 const socket = io(apiUrl);
 
 const ChatMessagesScreen = () => {
-  const [showEmojiSelector, setShowEmojiSelector] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
@@ -53,37 +39,30 @@ const ChatMessagesScreen = () => {
   }, []);
 
   const scrollToBottom = () => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToEnd({ animated: false });
-    }
+    scrollViewRef.current?.scrollToEnd({ animated: false });
   };
 
   const handleContentSizeChange = () => {
     scrollToBottom();
   };
 
-  const handleEmojiPress = () => {
-    setShowEmojiSelector(!showEmojiSelector);
-  };
-
-  const fetchMessages = async () => {
-    try {
-      const response = await fetch(
-        apiUrl + `/messages/${userId}/${recepientId}`
-      );
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessages(data);
-      } else {
-        console.log("error showing messags", response.status.message);
-      }
-    } catch (error) {
-      console.log("error fetching messages", error);
-    }
-  };
-
   useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(
+          apiUrl + `/messages/${userId}/${recepientId}`
+        );
+        const data = await response.json();
+
+        if (response.ok) {
+          setMessages(data);
+        } else {
+          console.log("error showing messags", response.status.message);
+        }
+      } catch (error) {
+        console.log("error fetching messages", error);
+      }
+    };
     fetchMessages();
   }, []);
 
@@ -104,7 +83,6 @@ const ChatMessagesScreen = () => {
 
   useEffect(() => {
     socket.on("newMessage", (newMessage) => {
-      console.log("Received new message:", newMessage);
       setMessages((prevMessages) => [...prevMessages, newMessage]);
       scrollToBottom();
     });
@@ -203,7 +181,7 @@ const ChatMessagesScreen = () => {
 
   const deleteMessages = async (messageIds) => {
     try {
-      const response = await fetch("http://34.131.14.35/deleteMessages", {
+      const response = await fetch(apiUrl + "/deleteMessages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -265,14 +243,14 @@ const ChatMessagesScreen = () => {
           onContentSizeChange={handleContentSizeChange}
         >
           {messages.map((item, index) => {
-            if (item.messageType === "text") {
+            if (item.messageType == "text") {
               const isSelected = selectedMessages.includes(item._id);
               return (
                 <Pressable
                   onLongPress={() => handleSelectMessage(item)}
                   key={index}
                   style={[
-                    item?.senderId?._id === userId
+                    item?.senderId?._id == userId
                       ? {
                           alignSelf: "flex-end",
                           backgroundColor: "#DCF8C6",

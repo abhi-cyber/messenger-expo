@@ -10,74 +10,85 @@ const RegisterScreen = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState(null);
   const [userType, setUserType] = useState("Corporate");
   const [companyName, setCompanyName] = useState("");
   const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const navigation = useNavigation();
 
   const handleRegister = async () => {
-    const user = { name, email, password, isAdmin };
-    console.log(user);
+    const user = {
+      name,
+      email,
+      password,
+      confirmPassword,
+      phoneNumber,
+      userType,
+      companyName,
+    };
 
-    try {
-      // Send a POST request to the backend API to initiate registration
-      const response = await axios.post(apiUrl + "/register", user);
-      // Check if the registration initiation was successful
-      if (response.status != 200)
-        return Alert.alert(
-          "Registration Error",
-          "An error occurred while initiating registration"
+    axios
+      .post(apiUrl + "/register", user)
+      .then((response) => {
+        if (response.status != 200)
+          return Alert.alert(
+            "Registration Error",
+            "An error occurred while initiating registration"
+          );
+        Alert.alert(
+          "Registration successful",
+          "You have initiated the registration process. Check your email for the OTP."
         );
-
-      Alert.alert(
-        "Registration successful",
-        "You have initiated the registration process. Check your email for the OTP."
-      );
-      // Show OTP verification component only when initiation is successful
-      setShowOtpVerification(true);
-    } catch (error) {
-      Alert.alert("Registration Error", "An error occurred while registering");
-      console.log("Registration initiation failed", error);
-    }
+        setShowOtpVerification(true);
+      })
+      .catch((error) => {
+        Alert.alert(
+          "Registration Error",
+          "An error occurred while registering"
+        );
+        console.log("Registration initiation failed", error);
+      });
   };
 
   const handleVerificationComplete = async (enteredCode) => {
-    try {
-      // Send the verification code to the backend for validation
-      const verificationResponse = await axios.post(apiUrl + "/verify-otp", {
+    // Send the verification code to the backend for validation
+    axios
+      .post(apiUrl + "/verify-otp", {
         email,
         otp: enteredCode,
-      });
+      })
+      .then((verificationResponse) => {
+        // Check if the verification was successful
+        if (verificationResponse.status != 200)
+          return Alert.alert(
+            "Verification failed",
+            "Please check your verification code and try again"
+          );
 
-      // Check if the verification was successful
-      if (verificationResponse.status != 200)
-        return Alert.alert(
-          "Verification failed",
-          "Please check your verification code and try again"
+        Alert.alert(
+          "Email verified",
+          "Your email has been successfully verified"
         );
-
-      Alert.alert(
-        "Email verified",
-        "Your email has been successfully verified"
-      );
-    } catch (error) {
-      console.error("Axios error during OTP verification:", error);
-      Alert.alert(
-        "Verification failed",
-        "An error occurred during OTP verification"
-      );
-    }
+        navigation.navigate("Login");
+      })
+      .catch((error) => {
+        console.error("Axios error during OTP verification:", error);
+        Alert.alert(
+          "Verification failed",
+          "An error occurred during OTP verification"
+        );
+      });
 
     // Reset the state and hide OTP verification component
     setShowOtpVerification(false);
     setName("");
     setEmail("");
     setPassword("");
+    setConfirmPassword("");
     setPhoneNumber(null);
-    setUserType("");
-    setIsAdmin(false);
+    setUserType("Corporate");
+    setCompanyName("");
   };
 
   const handleLoginButton = () => {
@@ -101,14 +112,14 @@ const RegisterScreen = () => {
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
             phoneNumber={phoneNumber}
             setPhoneNumber={setPhoneNumber}
             userType={userType}
             setUserType={setUserType}
             companyName={companyName}
             setCompanyName={setCompanyName}
-            isAdmin={isAdmin}
-            setIsAdmin={setIsAdmin}
             handleRegister={handleRegister}
             handleLoginButton={handleLoginButton}
           />

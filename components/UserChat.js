@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { UserType } from "../UserContext";
 import { apiUrl } from "../constants/consts";
+import io from "socket.io-client";
 
 const UserChat = ({ item }) => {
   const { userId, setUserId } = useContext(UserType);
@@ -12,6 +13,7 @@ const UserChat = ({ item }) => {
     try {
       const response = await fetch(apiUrl + `/messages/${userId}/${item._id}`);
       const data = await response.json();
+      console.log(data);
 
       if (response.ok) {
         setMessages(data);
@@ -24,9 +26,27 @@ const UserChat = ({ item }) => {
   };
 
   useEffect(() => {
+    const socket = io(apiUrl);
+
+    // Listen for new messages
+    socket.on("newMessage", (message) => {
+      if (
+        (message.senderId === userId && message.recepientId === item._id) ||
+        (message.senderId === item._id && message.recepientId === userId)
+      ) {
+        // Update messages state with the new message
+        setMessages((prevMessages) => [...prevMessages, message]);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
     fetchMessages();
   }, []);
-  console.log(messages);
 
   const getLastMessage = () => {
     const userMessages = messages.filter(

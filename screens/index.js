@@ -1,15 +1,13 @@
 import ChatMessagesScreen from "./ChatMessagesScreen";
-import ChatsScreen from "./ChatsScreen";
-import FriendsScreen from "./FriendsScreen";
 import HomeScreen from "./HomeScreen";
 import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
+import RequestsScreen from "./RequestsScreen";
 
 export {
   ChatMessagesScreen,
-  ChatsScreen,
-  FriendsScreen,
   HomeScreen,
   LoginScreen,
   RegisterScreen,
+  RequestsScreen,
 };

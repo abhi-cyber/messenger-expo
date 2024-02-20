@@ -1,10 +1,16 @@
 import { TouchableOpacity, View, Image, Text } from "react-native";
 import { accent } from "../../constants/style";
 import userIcon from "../../assets/user.png";
+import { useNavigation } from "@react-navigation/native";
 export default ({ index, user }) => {
+  const navigation = useNavigation();
+
   return (
     <>
       <TouchableOpacity
+        onPress={() =>
+          navigation.navigate("Messages", { recepientId: user._id })
+        }
         style={{
           width: "90%",
           flexDirection: "row",
