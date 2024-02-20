@@ -283,7 +283,6 @@ app.post("/friend-request", async (req, res) => {
 
           res.sendStatus(200);
         }
-        console.log("already friends");
       });
   } catch (error) {
     console.log(error);

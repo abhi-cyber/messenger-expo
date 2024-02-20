@@ -16,6 +16,8 @@ import {
   TextInput,
   Pressable,
   Image,
+  Modal,
+  ImageViewer,
 } from "react-native";
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
 
@@ -23,6 +25,7 @@ const socket = io(apiUrl);
 
 const ChatMessagesScreen = () => {
   const [selectedMessages, setSelectedMessages] = useState([]);
+  const [openImage, setOpenImage] = useState("");
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [recepientData, setRecepientData] = useState();
@@ -46,23 +49,24 @@ const ChatMessagesScreen = () => {
     scrollToBottom();
   };
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(
-          apiUrl + `/messages/${userId}/${recepientId}`
-        );
-        const data = await response.json();
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch(
+        apiUrl + `/messages/${userId}/${recepientId}`
+      );
+      const data = await response.json();
 
-        if (response.ok) {
-          setMessages(data);
-        } else {
-          console.log("error showing messags", response.status.message);
-        }
-      } catch (error) {
-        console.log("error fetching messages", error);
+      if (response.ok) {
+        setMessages(data);
+      } else {
+        console.log("error showing messags", response.status.message);
       }
-    };
+    } catch (error) {
+      console.log("error fetching messages", error);
+    }
+  };
+
+  useEffect(() => {
     fetchMessages();
   }, []);
 
@@ -127,8 +131,6 @@ const ChatMessagesScreen = () => {
       console.log("error in sending the message", error);
     }
   };
-
-  console.log("messages", selectedMessages);
 
   useLayoutEffect(() => {
     const handleLogout = async () => {
@@ -206,19 +208,24 @@ const ChatMessagesScreen = () => {
     const options = { hour: "numeric", minute: "numeric" };
     return new Date(time).toLocaleString("en-US", options);
   };
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      // allowsEditing: true,
+      // aspect: [4, 3],
       quality: 1,
     });
 
-    console.log(result);
+    const fileName = result.uri.split("/").pop();
+    const fileType = fileName.split(".").pop();
+    console.log("image", fileName.split(".")[0] + Date.now() + fileType);
+
     if (!result.canceled) {
       handleSend("image", result.uri);
     }
   };
+
   const handleSelectMessage = (message) => {
     //check if the message is already selected
     const isSelected = selectedMessages.includes(message._id);
@@ -236,114 +243,121 @@ const ChatMessagesScreen = () => {
   };
   return (
     <View style={[{ flex: 1 }, styleUtils.primaryScreen]}>
-      <KeyboardAvoidingView style={{ flex: 1 }}>
-        <ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={{ flexGrow: 1 }}
-          onContentSizeChange={handleContentSizeChange}
-        >
-          {messages.map((item, index) => {
-            if (item.messageType == "text") {
-              const isSelected = selectedMessages.includes(item._id);
-              return (
-                <Pressable
-                  onLongPress={() => handleSelectMessage(item)}
-                  key={index}
-                  style={[
-                    item?.senderId?._id == userId
-                      ? {
-                          alignSelf: "flex-end",
-                          backgroundColor: "#DCF8C6",
-                          padding: 8,
-                          maxWidth: "60%",
-                          borderRadius: 7,
-                          margin: 10,
-                        }
-                      : {
-                          alignSelf: "flex-start",
-                          backgroundColor: "white",
-                          padding: 8,
-                          margin: 10,
-                          borderRadius: 7,
-                          maxWidth: "60%",
-                        },
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ height: "100%" }}
+        onContentSizeChange={handleContentSizeChange}
+      >
+        {messages.map((item, index) => {
+          if (item.messageType == "text") {
+            const isSelected = selectedMessages.includes(item._id);
+            return (
+              <Pressable
+                onLongPress={() => handleSelectMessage(item)}
+                key={index}
+                style={[
+                  item?.senderId?._id == userId
+                    ? {
+                        alignSelf: "flex-end",
+                        backgroundColor: "#DCF8C6",
+                        padding: 8,
+                        maxWidth: "60%",
+                        borderRadius: 7,
+                        margin: 10,
+                      }
+                    : {
+                        alignSelf: "flex-start",
+                        backgroundColor: "white",
+                        padding: 8,
+                        margin: 10,
+                        borderRadius: 7,
+                        maxWidth: "60%",
+                      },
 
-                    isSelected && { width: "100%", backgroundColor: "#F0FFFF" },
-                  ]}
+                  isSelected && { width: "100%", backgroundColor: "#F0FFFF" },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    textAlign: isSelected ? "right" : "left",
+                  }}
                 >
-                  <Text
+                  {item?.message}
+                </Text>
+                <Text
+                  style={{
+                    textAlign: "right",
+                    fontSize: 9,
+                    color: "gray",
+                    marginTop: 5,
+                  }}
+                >
+                  {formatTime(item.timeStamp)}
+                </Text>
+              </Pressable>
+            );
+          }
+          if (item.messageType === "image") {
+            const imageUrl = item.imageUrl;
+            const filename = imageUrl.split("/").pop();
+            const source = { uri: apiUrl + "/" + filename };
+            return (
+              <Pressable
+                key={index}
+                onPress={() => {
+                  setOpenImage(source.uri);
+                  console.log(source.uri);
+                }}
+                style={[
+                  item?.senderId?._id === userId
+                    ? {
+                        alignSelf: "flex-end",
+                        backgroundColor: "#DCF8C6",
+                        padding: 8,
+                        maxWidth: "60%",
+                        borderRadius: 7,
+                        margin: 10,
+                      }
+                    : {
+                        alignSelf: "flex-start",
+                        backgroundColor: "white",
+                        padding: 8,
+                        margin: 10,
+                        borderRadius: 7,
+                        maxWidth: "60%",
+                      },
+                ]}
+              >
+                <View>
+                  <Image
+                    source={source}
                     style={{
-                      fontSize: 13,
-                      textAlign: isSelected ? "right" : "left",
+                      width: 200,
+                      height: 200,
+                      borderRadius: 7,
                     }}
-                  >
-                    {item?.message}
-                  </Text>
+                  />
                   <Text
                     style={{
                       textAlign: "right",
                       fontSize: 9,
-                      color: "gray",
+                      position: "absolute",
+                      right: 10,
+                      bottom: 7,
+                      color: "white",
                       marginTop: 5,
                     }}
                   >
-                    {formatTime(item.timeStamp)}
+                    {formatTime(item?.timeStamp)}
                   </Text>
-                </Pressable>
-              );
-            }
-            if (item.messageType === "image") {
-              const imageUrl = item.imageUrl;
-              const filename = imageUrl.split("/").pop();
-              const source = { uri: apiUrl + "/" + filename };
-              return (
-                <Pressable
-                  key={index}
-                  style={[
-                    item?.senderId?._id === userId
-                      ? {
-                          alignSelf: "flex-end",
-                          backgroundColor: "#DCF8C6",
-                          padding: 8,
-                          maxWidth: "60%",
-                          borderRadius: 7,
-                          margin: 10,
-                        }
-                      : {
-                          alignSelf: "flex-start",
-                          backgroundColor: "white",
-                          padding: 8,
-                          margin: 10,
-                          borderRadius: 7,
-                          maxWidth: "60%",
-                        },
-                  ]}
-                >
-                  <View>
-                    <Image
-                      source={source}
-                      style={{ width: 200, height: 200, borderRadius: 7 }}
-                    />
-                    <Text
-                      style={{
-                        textAlign: "right",
-                        fontSize: 9,
-                        position: "absolute",
-                        right: 10,
-                        bottom: 7,
-                        color: "white",
-                        marginTop: 5,
-                      }}
-                    >
-                      {formatTime(item?.timeStamp)}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            }
-          })}
-        </ScrollView>
-
+                </View>
+              </Pressable>
+            );
+          }
+        })}
+      </ScrollView>
+      <KeyboardAvoidingView>
         <View
           style={{
             flexDirection: "row",
