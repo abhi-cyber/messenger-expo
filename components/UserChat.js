@@ -10,7 +10,7 @@ const UserChat = ({item}) => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    const socket = io("http://192.168.1.14:8000");
+    const socket = io("http://10.0.67.114:8000");
 
     // Listen for new messages
     socket.on("newMessage", (message) => {
@@ -35,7 +35,7 @@ const UserChat = ({item}) => {
   const fetchMessages = async () => {
     try {
       const response = await fetch(
-        `http://192.168.1.14:8000/messages/${userId}/${item._id}`
+        `http://10.0.67.114:8000/messages/${userId}/${item._id}`
       );
       const data = await response.json();
 
