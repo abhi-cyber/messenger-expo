@@ -1,33 +1,32 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
-const nodemailer = require("nodemailer");
-const smtpTransport = require("nodemailer-smtp-transport");
+import express from "express";
+import bodyParser from "body-parser";
+import mongoose from "mongoose";
+import passport from "passport";
+import nodemailer from "nodemailer";
+import cors from "cors";
+import "dotenv/config";
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
+import jwt from "jsonwebtoken";
+import multer from "multer";
+import User from "./models/user.js";
+import Message from "./models/message.js";
+
 const app = express();
-const port = 8000;
-const cors = require("cors");
+const server = http.createServer(app);
+const io = new SocketIOServer(server);
+
 app.use(cors());
-
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
-
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static("./files"));
 app.use(bodyParser.json());
 app.use(passport.initialize());
-const jwt = require("jsonwebtoken");
 
 mongoose
-  .connect(
-    // "mongodb+srv://abhirajchatrath:abhirajmessenger@cluster0.wsz6c9u.mongodb.net/",
-    "mongodb+srv://sudo:sudo@sudo.hsw80op.mongodb.net/",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
-  )
+  .connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("Connected to Mongo Db");
   })
@@ -55,26 +54,21 @@ io.on("connection", (socket) => {
   });
 });
 
-http.listen(port, "0.0.0.0", () => {
-  console.log("Server running on port 8000");
+server.listen(process.env.PORT, () => {
+  console.log("Server running on port " + process.env.PORT);
 });
 
-const User = require("./models/user");
-const Message = require("./models/message");
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "knightangle04@gmail.com",
+    pass: "ppkrafdhfsvwdnjz",
+  },
+});
 
 const sendVerificationEmail = (to, otp) => {
-  const transporter = nodemailer.createTransport(
-    smtpTransport({
-      service: "gmail",
-      auth: {
-        user: "abhiraj.dev.work@gmail.com",
-        pass: "aflnlzgaewkkalkd",
-      },
-    })
-  );
-
   const mailOptions = {
-    from: "abhiraj.dev.work@gmail.com",
+    from: "knightangle04@gmail.com",
     to,
     subject: "Email Verification",
     text: `Your verification code is: ${otp}`,
@@ -96,7 +90,8 @@ const generateOTP = () => {
 const tempUsers = {};
 
 app.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phoneNumber, userType, companyName } =
+    req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -111,6 +106,9 @@ app.post("/register", async (req, res) => {
       name,
       email,
       password,
+      phoneNumber,
+      userType,
+      companyName,
       verificationCode: otp,
     };
 
@@ -137,11 +135,8 @@ app.post("/verify-otp", async (req, res) => {
         .json({ message: "User not found. Register first." });
     }
 
-    console.log("Entered OTP:", otp);
-    console.log("Stored OTP:", tempUser.verificationCode);
-
     // Convert the stored OTP to a string for comparison
-    if (String(tempUser.verificationCode) !== otp) {
+    if (String(tempUser.verificationCode) != otp) {
       console.log("Verification failed: Invalid OTP");
       return res.status(400).json({ message: "Invalid OTP" });
     }
@@ -155,6 +150,9 @@ app.post("/verify-otp", async (req, res) => {
       name: tempUser.name,
       email: tempUser.email,
       password: tempUser.password,
+      phoneNumber: tempUser.phoneNumber,
+      userType: tempUser.userType,
+      companyName: tempUser.companyName,
       verificationCode: otp,
     });
 
@@ -173,26 +171,6 @@ app.post("/verify-otp", async (req, res) => {
   }
 });
 
-app.post("/verify-email", async (req, res) => {
-  const { email, verificationCode } = req.body;
-
-  try {
-    const user = await User.findOne({ email, verificationCode });
-
-    if (user) {
-      user.verified = true;
-      await user.save();
-
-      res.status(200).json({ message: "Email verified successfully" });
-    } else {
-      res.status(400).json({ message: "Invalid verification code" });
-    }
-  } catch (error) {
-    console.log("Error verifying email", error);
-    res.status(500).json({ message: "Error verifying email" });
-  }
-});
-
 const createToken = (userId, userName, isAdmin) => {
   const payload = {
     userId,
@@ -201,7 +179,6 @@ const createToken = (userId, userName, isAdmin) => {
   };
 
   const token = jwt.sign(payload, "Q$r2K6W8n!jCW%Zk", { expiresIn: "1h" });
-
   return token;
 };
 
@@ -249,7 +226,7 @@ app.get("/users/:userId", async (req, res) => {
       usersQuery = { _id: { $ne: loggedInUserId } };
     } else {
       // If the logged-in user is not an admin, retrieve only admin users
-      usersQuery = { isAdmin: true, _id: { $ne: loggedInUserId } };
+      usersQuery = { isAdmin: true };
     }
 
     const users = await User.find(usersQuery);
@@ -318,11 +295,11 @@ app.post("/friend-request/accept", async (req, res) => {
     recepient.friends.push(senderId);
 
     recepient.freindRequests = recepient.freindRequests.filter(
-      (request) => request.toString() !== senderId.toString()
+      (request) => request.toString() != senderId.toString()
     );
 
     sender.sentFriendRequests = sender.sentFriendRequests.filter(
-      (request) => request.toString() !== recepientId.toString()
+      (request) => request.toString() != recepientId.toString()
     );
 
     await sender.save();
@@ -348,11 +325,9 @@ app.get("/accepted-friends/:userId", async (req, res) => {
   }
 });
 
-const multer = require("multer");
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "files/");
+    cb(null, "./files/");
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
