@@ -304,7 +304,7 @@ app.post("/friend-request/accept", async (req, res) => {
     await recepient.save();
 
     io.emit("friendRequestAccepted", {senderId, recepientId});
-    
+
     res.status(200).json({message: "Friend Request accepted successfully"});
   } catch (error) {
     console.log(error);
@@ -356,6 +356,10 @@ app.post("/messages", upload.single("imageFile"), async (req, res) => {
 
     await newMessage.save();
 
+    await User.findByIdAndUpdate(recepientId, {
+      $inc: {unreadMessages: 1},
+    });
+
     // Send back the saved message as a response
     res.status(200).json(newMessage);
   } catch (error) {
@@ -386,6 +390,8 @@ app.get("/messages/:senderId/:recepientId", async (req, res) => {
     }).populate("senderId", "_id name image");
 
     res.json(messages);
+
+    await User.findByIdAndUpdate(recepientId, {unreadMessages: 0});
   } catch (error) {
     console.log(error);
     res.status(500).json({error: "Internal Server Error"});

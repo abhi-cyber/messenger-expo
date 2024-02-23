@@ -7,6 +7,7 @@ import io from "socket.io-client";
 const UserChat = ({item}) => {
   const {userId, setUserId} = useContext(UserType);
   const [messages, setMessages] = useState([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -14,12 +15,14 @@ const UserChat = ({item}) => {
 
     // Listen for new messages
     socket.on("newMessage", (message) => {
-      if (
-        (message.senderId === userId && message.recepientId === item._id) ||
-        (message.senderId === item._id && message.recepientId === userId)
-      ) {
-        // Update messages state with the new message
-        setMessages((prevMessages) => [...prevMessages, message]);
+      console.log("New message received:", message);
+      // Update messages state with the new message
+      setMessages((prevMessages) => [...prevMessages, message]);
+
+      // Check if the message is from the current chat user
+      if (message.senderId === item._id && message.recepientId === userId) {
+        // Update unread messages count
+        setUnreadMessages((prevUnread) => prevUnread + 1);
       }
     });
 
@@ -32,6 +35,15 @@ const UserChat = ({item}) => {
     fetchMessages();
   }, []);
 
+  useEffect(() => {
+    // Reset unread messages count to 0 when navigating to chat message screen
+    const unsubscribe = navigation.addListener("focus", () => {
+      setUnreadMessages(0);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const fetchMessages = async () => {
     try {
       const response = await fetch(
@@ -41,11 +53,16 @@ const UserChat = ({item}) => {
 
       if (response.ok) {
         setMessages(data);
+
+        const unreadCount = data.filter(
+          (message) => message.senderId === item._id
+        ).length;
+        setUnreadMessages(unreadCount);
       } else {
-        console.log("error showing messags", response.status.message);
+        console.log("Error fetching messages:", response.status.message);
       }
     } catch (error) {
-      console.log("error fetching messages", error);
+      console.log("Error fetching messages:", error);
     }
   };
 
@@ -58,12 +75,14 @@ const UserChat = ({item}) => {
 
     return userMessages[n - 1];
   };
+
   const lastMessage = getLastMessage();
-  console.log(lastMessage);
+
   const formatTime = (time) => {
     const options = {hour: "numeric", minute: "numeric"};
     return new Date(time).toLocaleString("en-US", options);
   };
+
   return (
     <Pressable
       onPress={() =>
@@ -89,6 +108,17 @@ const UserChat = ({item}) => {
 
       <View style={{flex: 1}}>
         <Text style={{fontSize: 15, fontWeight: "500"}}>{item?.name}</Text>
+        {unreadMessages > 0 && (
+          <View
+            style={{
+              backgroundColor: "red",
+              borderRadius: 10,
+              marginLeft: 5,
+              padding: 2,
+            }}>
+            <Text style={{color: "white", fontSize: 12}}>{unreadMessages}</Text>
+          </View>
+        )}
         {lastMessage && (
           <Text style={{marginTop: 3, color: "gray", fontWeight: "500"}}>
             {lastMessage?.message}
