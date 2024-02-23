@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  ScrollView,
   FlatList,
 } from "react-native";
 import { useLayoutEffect, useState, useEffect } from "react";
@@ -44,7 +43,6 @@ const RequestsScreen = () => {
             _id: friendRequest._id,
             name: friendRequest.name,
             email: friendRequest.email,
-            image: friendRequest.image,
           }));
           setFriendRequests(friendRequestsData);
         }

@@ -5,7 +5,7 @@ import styleUtils, {
   accent,
   vw,
 } from "../../constants/style";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 
 const Register = ({
   name,
@@ -67,7 +67,11 @@ const Register = ({
           </Text>
           <TextInput
             value={phoneNumber}
-            onChangeText={(text) => setPhoneNumber(text)}
+            onChangeText={(text) =>
+              !isNaN(Number(text))
+                ? setPhoneNumber(Number(Text))
+                : Alert.alert("Invalid Input", "Please enter a valid number")
+            }
             style={[
               styleUtils.SubText,
               {

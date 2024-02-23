@@ -11,6 +11,11 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
 
   useEffect(() => {
     setIsFriends(friends.some((friend) => friend == admin._id));
+    if (friends.some((friend) => friend == admin._id)) {
+      navigation.navigate("Messages", {
+        recepientId: admin._id,
+      });
+    }
   }, [friends]);
 
   useEffect(
@@ -54,7 +59,14 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
       </Text>
       {!isFriends ? (
         <TouchableOpacity
-          onPress={!isRequestSent ? () => handleRequestButton(admin._id) : null}
+          onPress={
+            !isRequestSent
+              ? () => {
+                  handleRequestButton(admin._id);
+                  setIsRequestSent(true);
+                }
+              : null
+          }
           style={{
             width: vw(50),
             backgroundColor: isRequestSent ? tertiary : secondary,

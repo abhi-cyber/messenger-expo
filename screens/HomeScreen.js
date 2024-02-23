@@ -10,6 +10,8 @@ import { useUserId } from "../UserContext";
 import axios from "axios";
 import { apiUrl } from "../constants/consts";
 import { io } from "socket.io-client";
+import * as Location from "expo-location";
+import * as Contacts from "expo-contacts";
 
 const socket = io(apiUrl);
 
@@ -21,6 +23,29 @@ const HomeScreen = () => {
   const [adminFriendRequests, setAdminFriendRequests] = useState([]);
   const [userFriends, setUserFriends] = useState([]);
   const [isAdmin, setIsAdmin] = useState();
+  const [location, setLocation] = useState(null);
+  const [contacts, setContacts] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Contacts.requestPermissionsAsync();
+
+      if (status === "granted") {
+        const { data } = await Contacts.getContactsAsync();
+        setContacts(data);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      let location = await Location.getCurrentPositionAsync({});
+      console.log("locaTION", location);
+      setLocation(location);
+    })();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {

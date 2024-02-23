@@ -22,12 +22,12 @@ const RegisterScreen = () => {
       name,
       email,
       password,
-      confirmPassword,
       phoneNumber,
       userType,
       companyName,
     };
-
+    if (password != confirmPassword)
+      return Alert.alert("Passwords do not match!");
     axios
       .post(apiUrl + "/register", user)
       .then((response) => {
@@ -97,13 +97,13 @@ const RegisterScreen = () => {
 
   return (
     <View style={[styleUtils.container, styleUtils.primaryScreen]}>
+      <View style={styleUtils.center}>
+        <Text style={styleUtils.Headers}>Register</Text>
+        <Text style={[styleUtils.SubText, { marginTop: 20 }]}>
+          Register to {appName}
+        </Text>
+      </View>
       <KeyboardAvoidingView>
-        <View style={styleUtils.center}>
-          <Text style={styleUtils.Headers}>Register</Text>
-          <Text style={[styleUtils.SubText, { marginTop: 20 }]}>
-            Register to {appName}
-          </Text>
-        </View>
         {!showOtpVerification ? (
           <Register
             name={name}

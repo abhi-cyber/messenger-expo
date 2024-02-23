@@ -24,8 +24,8 @@ export default ({ index, user }) => {
       >
         <View
           style={{
-            height: 65,
-            width: 65,
+            height: 50,
+            width: 50,
             overflow: "hidden",
             justifyContent: "center",
             alignItems: "center",
@@ -35,23 +35,33 @@ export default ({ index, user }) => {
         >
           <Image
             style={{
-              height: 45,
-              width: 45,
+              height: 35,
+              width: 35,
               objectFit: "cover",
             }}
             source={userIcon}
           />
         </View>
-        <Text
-          style={{
-            color: accent,
-            fontSize: 30,
-            fontWeight: "700",
-            textAlign: "center",
-          }}
-        >
-          {user.name}
-        </Text>
+        <View>
+          <Text
+            style={{
+              color: accent,
+              fontSize: 20,
+              fontWeight: "700",
+            }}
+          >
+            {user.name}
+          </Text>
+          <Text
+            style={{
+              color: accent,
+              fontSize: 20,
+              fontWeight: "400",
+            }}
+          >
+            {user.email}
+          </Text>
+        </View>
       </TouchableOpacity>
     </>
   );

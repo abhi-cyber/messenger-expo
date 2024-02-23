@@ -1,13 +1,14 @@
-import { Feather } from "@expo/vector-icons";
-import { Entypo } from "@expo/vector-icons";
+import { Feather, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
 import { apiUrl } from "../constants/consts";
 import { useUserId } from "../UserContext";
 import adminAvatar from "../assets/admin.png";
+import userAvatar from "../assets/user.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import styleUtils, { accent, secondary } from "../constants/style";
+import styleUtils, { accent, secondary, tertiary } from "../constants/style";
+import jwt_decode from "jwt-decode";
 import {
   Text,
   View,
@@ -16,24 +17,37 @@ import {
   TextInput,
   Pressable,
   Image,
+  TouchableOpacity,
   Modal,
-  ImageViewer,
 } from "react-native";
 import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
+import * as Clipboard from "expo-clipboard";
 
 const socket = io(apiUrl);
 
 const ChatMessagesScreen = () => {
   const [selectedMessages, setSelectedMessages] = useState([]);
-  const [openImage, setOpenImage] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userName, setUserName] = useState("");
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [recepientData, setRecepientData] = useState();
+  const [showRecepientData, setShowRecepientData] = useState(false);
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
   const { recepientId } = route.params;
   const { userId } = useUserId();
+
+  useEffect(() => {
+    (async () => {
+      const token = await AsyncStorage.getItem("authToken");
+      const decodedToken = jwt_decode(token);
+      const isAdmin = decodedToken.isAdmin || false;
+      setUserName(decodedToken.userName);
+      setIsAdmin(isAdmin);
+    })();
+  }, []);
 
   const scrollViewRef = useRef(null);
 
@@ -131,8 +145,7 @@ const ChatMessagesScreen = () => {
       console.log("error in sending the message", error);
     }
   };
-
-  useLayoutEffect(() => {
+  useEffect(() => {
     const handleLogout = async () => {
       try {
         // Clear the token from AsyncStorage
@@ -143,11 +156,15 @@ const ChatMessagesScreen = () => {
         console.error("Error logging out:", error);
       }
     };
+
     navigation.setOptions({
       headerTitle: "",
       headerStyle: { backgroundColor: secondary },
       headerLeft: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <Pressable
+          onPress={() => setShowRecepientData((prev) => !prev)}
+          style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+        >
           <View
             style={{
               height: 40,
@@ -161,15 +178,17 @@ const ChatMessagesScreen = () => {
           >
             <Image
               style={{
-                height: 45,
-                width: 45,
+                height: recepientData?.isAdmin ? 45 : 26,
+                width: recepientData?.isAdmin ? 45 : 26,
                 objectFit: "cover",
               }}
-              source={adminAvatar}
+              source={recepientData?.isAdmin ? adminAvatar : userAvatar}
             />
           </View>
-          <Text style={{ color: "white", fontSize: 20 }}>Admin</Text>
-        </View>
+          <Text style={{ color: "white", fontSize: 20 }}>
+            {recepientData?.isAdmin ? "Admin" : recepientData?.name}
+          </Text>
+        </Pressable>
       ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -179,7 +198,7 @@ const ChatMessagesScreen = () => {
         </View>
       ),
     });
-  }, []);
+  }, [recepientData]);
 
   const deleteMessages = async (messageIds) => {
     try {
@@ -195,7 +214,6 @@ const ChatMessagesScreen = () => {
         setSelectedMessages((prevSelectedMessages) =>
           prevSelectedMessages.filter((id) => !messageIds.includes(id))
         );
-
         fetchMessages();
       } else {
         console.log("error deleting messages", response.status);
@@ -204,6 +222,7 @@ const ChatMessagesScreen = () => {
       console.log("error deleting messages", error);
     }
   };
+
   const formatTime = (time) => {
     const options = { hour: "numeric", minute: "numeric" };
     return new Date(time).toLocaleString("en-US", options);
@@ -216,10 +235,6 @@ const ChatMessagesScreen = () => {
       // aspect: [4, 3],
       quality: 1,
     });
-
-    const fileName = result.uri.split("/").pop();
-    const fileType = fileName.split(".").pop();
-    console.log("image", fileName.split(".")[0] + Date.now() + fileType);
 
     if (!result.canceled) {
       handleSend("image", result.uri);
@@ -241,8 +256,108 @@ const ChatMessagesScreen = () => {
       ]);
     }
   };
+
   return (
     <View style={[{ flex: 1 }, styleUtils.primaryScreen]}>
+      {selectedMessages.length > 0 && isAdmin && (
+        <View
+          style={{
+            width: "100%",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 40,
+            backgroundColor: secondary,
+            paddingHorizontal: 60,
+            paddingVertical: 20,
+          }}
+        >
+          <TouchableOpacity
+            onPress={async () => {
+              const msgs = messages.filter((m) =>
+                selectedMessages.includes(m._id)
+              );
+              await Clipboard.setStringAsync(
+                msgs.map((msg) => msg.message).join("\n")
+              );
+              setSelectedMessages([]);
+            }}
+          >
+            <Entypo name="copy" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => deleteMessages(selectedMessages)}>
+            <MaterialIcons name="delete" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Entypo name="forward" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showRecepientData}
+        onRequestClose={() => setShowRecepientData(false)}
+      >
+        <Pressable
+          onPress={() => setShowRecepientData(false)}
+          style={{ position: "relative", flex: 1 }}
+        >
+          <View
+            style={{
+              position: "absolute",
+              top: 60,
+              left: 12,
+              elevation: 1,
+              borderRadius: 16,
+              backgroundColor: tertiary,
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexGrow: 1,
+              gap: 10,
+            }}
+          >
+            <Text style={{ color: "white", flexWrap: "wrap" }}>
+              {recepientData?.email}
+            </Text>
+            <Text style={{ color: "white", flexWrap: "wrap" }}>
+              {recepientData?.phoneNumber}
+            </Text>
+            <Text style={{ color: "white", flexWrap: "wrap" }}>
+              {recepientData?.companyName}
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
+      <Modal animationType="fade" transparent={true} visible={!!selectedImage}>
+        <Pressable
+          onPress={() => setSelectedImage("")}
+          style={{ position: "relative", flex: 1 }}
+        >
+          <View
+            style={{
+              height: "100%",
+              width: "100%",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              elevation: 1,
+              backgroundColor: tertiary,
+              padding: 10,
+              gap: 10,
+            }}
+          >
+            <Image
+              source={{ uri: selectedImage }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+            />
+          </View>
+        </Pressable>
+      </Modal>
       <ScrollView
         ref={scrollViewRef}
         style={{ height: "100%" }}
@@ -256,7 +371,7 @@ const ChatMessagesScreen = () => {
                 onLongPress={() => handleSelectMessage(item)}
                 key={index}
                 style={[
-                  item?.senderId?._id == userId
+                  item?.senderId?._id == userId || item?.senderId == userId
                     ? {
                         alignSelf: "flex-end",
                         backgroundColor: "#DCF8C6",
@@ -300,17 +415,14 @@ const ChatMessagesScreen = () => {
           }
           if (item.messageType === "image") {
             const imageUrl = item.imageUrl;
-            const filename = imageUrl.split("/").pop();
+            const filename = imageUrl.split(/[/\\]/).pop();
             const source = { uri: apiUrl + "/" + filename };
             return (
               <Pressable
                 key={index}
-                onPress={() => {
-                  setOpenImage(source.uri);
-                  console.log(source.uri);
-                }}
+                onPress={() => setSelectedImage(source.uri)}
                 style={[
-                  item?.senderId?._id === userId
+                  item?.senderId?._id == userId
                     ? {
                         alignSelf: "flex-end",
                         backgroundColor: "#DCF8C6",
