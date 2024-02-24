@@ -88,13 +88,13 @@ const HomeScreen = () => {
       {isAdmin ? (
         <View style={{padding: 10}}>
           {users.map((item, index) => (
-            <User key={index} item={item} />
+            <User key={index} item={item} isAdmin={isAdmin} />
           ))}
         </View>
       ) : (
         <View style={{padding: 10}}>
           {users.map((item, index) => (
-            <User key={index} item={item} />
+            <User key={index} item={item} isAdmin={isAdmin} />
           ))}
         </View>
       )}

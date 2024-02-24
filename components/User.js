@@ -1,11 +1,12 @@
-import {StyleSheet, Text, View, Pressable, Image} from "react-native";
+import {StyleSheet, Text, View, Pressable, Image, Alert } from "react-native";
 import React, {useContext, useState, useEffect} from "react";
 import {UserType} from "../UserContext";
+import axios from "axios";
 import {io} from "socket.io-client";
 
 const socket = io("http://10.0.67.114:8000");
 
-const User = ({item}) => {
+const User = ({item, isAdmin}) => {
   const {userId, setUserId} = useContext(UserType);
   const [requestSent, setRequestSent] = useState(false);
   const [friendRequests, setFriendRequests] = useState([]);
@@ -49,22 +50,17 @@ const User = ({item}) => {
 
     fetchFriendRequests();
     fetchUserFriends();
-
-    // Listen for the event when a friend request is accepted
     socket.on("friendRequestAccepted", ({senderId, recepientId}) => {
-      // Check if the accepted friend request involves the current user
       if (userId === senderId || userId === recepientId) {
-        // Refresh the friend list or update the state as necessary
-        fetchFriendRequests(); // Call the function to fetch friend requests again
-        fetchUserFriends(); // Call the function to fetch user friends again
+        fetchFriendRequests();
+        fetchUserFriends();
       }
     });
 
-    // Clean up the socket listener when component unmounts
     return () => {
       socket.off("friendRequestAccepted");
     };
-  }, [userId]); // Make sure to include userId in the dependency array
+  }, [userId]);
 
   const sendFriendRequest = async (currentUserId, selectedUserId) => {
     try {
@@ -81,6 +77,22 @@ const User = ({item}) => {
       }
     } catch (error) {
       console.log("error message", error);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    try {
+      const response = await axios.delete(
+        `http://10.0.67.114:8000/users/${userId}`
+      );
+      if (response.status === 200) {
+        Alert.alert("Success", "User deleted successfully");
+      } else {
+        Alert.alert("Error", "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      Alert.alert("Error", "Failed to delete user");
     }
   };
 
@@ -138,6 +150,12 @@ const User = ({item}) => {
           <Text style={{textAlign: "center", color: "white", fontSize: 13}}>
             Add Friend
           </Text>
+        </Pressable>
+      )}
+
+      {isAdmin && (
+        <Pressable onPress={() => deleteUser(item._id)}>
+          <Text style={{color: "red", marginLeft: 10}}>Delete</Text>
         </Pressable>
       )}
     </Pressable>
