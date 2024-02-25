@@ -20,10 +20,8 @@ import {
   TouchableOpacity,
   Modal,
 } from "react-native";
-import React, { useState, useLayoutEffect, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as Clipboard from "expo-clipboard";
-
-const socket = io(apiUrl);
 
 const ChatMessagesScreen = () => {
   const [selectedMessages, setSelectedMessages] = useState([]);
@@ -100,6 +98,7 @@ const ChatMessagesScreen = () => {
   }, []);
 
   useEffect(() => {
+    const socket = io(apiUrl);
     socket.on("newMessage", (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
       scrollToBottom();
@@ -111,6 +110,7 @@ const ChatMessagesScreen = () => {
   }, [setMessages]);
 
   const handleSend = async (messageType, imageUri) => {
+    const socket = io(apiUrl);
     try {
       const formData = new FormData();
       formData.append("senderId", userId);
@@ -145,6 +145,7 @@ const ChatMessagesScreen = () => {
       console.log("error in sending the message", error);
     }
   };
+
   useEffect(() => {
     const handleLogout = async () => {
       try {
@@ -288,9 +289,9 @@ const ChatMessagesScreen = () => {
           <TouchableOpacity onPress={() => deleteMessages(selectedMessages)}>
             <MaterialIcons name="delete" size={24} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity>
-            <Entypo name="forward" size={24} color="white" />
-          </TouchableOpacity>
+          {/* <TouchableOpacity> */}
+          {/* <Entypo name="forward" size={24} color="white" /> */}
+          {/* </TouchableOpacity> */}
         </View>
       )}
       <Modal
@@ -329,7 +330,12 @@ const ChatMessagesScreen = () => {
           </View>
         </Pressable>
       </Modal>
-      <Modal animationType="fade" transparent={true} visible={!!selectedImage}>
+      <Modal
+        onRequestClose={() => setSelectedImage("")}
+        animationType="fade"
+        transparent={true}
+        visible={!!selectedImage}
+      >
         <Pressable
           onPress={() => setSelectedImage("")}
           style={{ position: "relative", flex: 1 }}

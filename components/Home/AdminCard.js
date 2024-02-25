@@ -10,21 +10,18 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
   const navigation = useNavigation();
 
   useEffect(() => {
-    setIsFriends(friends.some((friend) => friend == admin._id));
-    if (friends.some((friend) => friend == admin._id)) {
+    const isInFriendList = friends.some((friend) => friend == admin._id);
+    setIsFriends(isInFriendList);
+    if (isInFriendList) {
       navigation.navigate("Messages", {
         recepientId: admin._id,
       });
     }
   }, [friends]);
 
-  useEffect(
-    () =>
-      setIsRequestSent(
-        friendRequests.some((friend) => friend._id == admin._id)
-      ),
-    [friendRequests]
-  );
+  useEffect(() => {
+    setIsRequestSent(friendRequests.some((friend) => friend._id == admin._id));
+  }, [friendRequests]);
   return (
     <>
       <View

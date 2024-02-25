@@ -3,7 +3,7 @@ import { UserContext } from "./UserContext";
 import { usePreventScreenCapture } from "expo-screen-capture";
 
 export default function App() {
-  usePreventScreenCapture();
+  // usePreventScreenCapture();
   return (
     <>
       <UserContext>

@@ -49,6 +49,13 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  unreadMessages: {
+    type: Number,
+    default: 0,
+  },
+  location: {
+    type: String,
+  },
 });
 
 const User = mongoose.model.User || mongoose.model("User", userSchema);

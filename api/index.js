@@ -94,9 +94,32 @@ app.post("/register", async (req, res) => {
     req.body;
 
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, isDeleted: true });
 
     if (existingUser) {
+      await User.findByIdAndUpdate(existingUser._id, { isDeleted: false });
+      const otp = generateOTP();
+
+      tempUsers[email] = {
+        name,
+        email,
+        password,
+        image,
+        verificationCode: otp,
+      };
+
+      sendVerificationEmail(email, otp);
+
+      return res.status(200).json({
+        message:
+          "Verification email sent. Please check your email for the OTP.",
+      });
+    }
+
+    // If the email is not associated with a deleted account, proceed with normal registration
+    const existingActiveUser = await User.findOne({ email });
+
+    if (existingActiveUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
@@ -352,6 +375,10 @@ app.post("/messages", upload.single("imageFile"), async (req, res) => {
 
     await newMessage.save();
 
+    await User.findByIdAndUpdate(recepientId, {
+      $inc: { unreadMessages: 1 },
+    });
+
     // Send back the saved message as a response
     res.status(200).json(newMessage);
   } catch (error) {
@@ -371,6 +398,17 @@ app.get("/user/:userId", async (req, res) => {
   }
 });
 
+app.delete("/users/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await User.findByIdAndDelete(userId);
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 app.get("/messages/:senderId/:recepientId", async (req, res) => {
   try {
     const { senderId, recepientId } = req.params;
@@ -382,6 +420,7 @@ app.get("/messages/:senderId/:recepientId", async (req, res) => {
     }).populate("senderId", "_id name image");
 
     res.json(messages);
+    await User.findByIdAndUpdate(recepientId, { unreadMessages: 0 });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });

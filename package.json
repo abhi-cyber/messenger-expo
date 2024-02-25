@@ -18,6 +18,7 @@
     "expo-contacts": "~12.2.0",
     "expo-image-picker": "~14.3.2",
     "expo-location": "~16.1.0",
+    "expo-notifications": "~0.20.1",
     "expo-screen-capture": "~5.3.0",
     "expo-status-bar": "~1.6.0",
     "jwt-decode": "^3.1.2",

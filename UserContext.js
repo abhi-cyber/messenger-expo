@@ -8,8 +8,9 @@ const useUserId = () => {
 
 const UserContext = ({ children }) => {
   const [userId, setUserId] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   return (
-    <UserType.Provider value={{ userId, setUserId }}>
+    <UserType.Provider value={{ userId, setUserId, isAdmin, setIsAdmin }}>
       {children}
     </UserType.Provider>
   );

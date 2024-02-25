@@ -23,7 +23,7 @@ import {
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { setUserId } = useUserId();
+  const { setUserId, setIsAdmin } = useUserId();
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -51,6 +51,7 @@ const LoginScreen = () => {
         AsyncStorage.setItem("authToken", token);
         const decodedToken = jwt_decode(token);
         setUserId(decodedToken.userId);
+        setIsAdmin(decodedToken.isAdmin);
         navigation.replace("Home");
       })
       .catch((error) => {

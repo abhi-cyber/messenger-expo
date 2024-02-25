@@ -1,9 +1,16 @@
-import { Text, View, Pressable, FlatList } from "react-native";
-import { useLayoutEffect, useState, useEffect } from "react";
+import {
+  Text,
+  View,
+  Pressable,
+  FlatList,
+  Alert,
+  BackHandler,
+} from "react-native";
+import { useLayoutEffect, useState, useEffect, useRef } from "react";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appName } from "../constants/consts";
-import styleUtils, { secondary, vw } from "../constants/style";
+import styleUtils, { secondary } from "../constants/style";
 import jwt_decode from "jwt-decode";
 import { AdminCard, UserCard } from "../components/Home";
 import { useUserId } from "../UserContext";
@@ -12,8 +19,59 @@ import { apiUrl } from "../constants/consts";
 import { io } from "socket.io-client";
 import * as Location from "expo-location";
 import * as Contacts from "expo-contacts";
+import * as Notifications from "expo-notifications";
+import { useIsFocused } from "@react-navigation/native";
 
-const socket = io(apiUrl);
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#FF231F7C",
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") {
+      alert("Failed to get push token for push notification!");
+      return;
+    }
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId: "your-project-id",
+      })
+    ).data;
+    console.log(token);
+  } else {
+    alert("Must use physical device for Push Notifications");
+  }
+
+  return token;
+}
+
+const handlePushNotification = async () => {
+  await Notifications.scheduleNotificationAsync({
+    trigger: { seconds: 2 },
+  });
+};
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -25,29 +83,95 @@ const HomeScreen = () => {
   const [isAdmin, setIsAdmin] = useState();
   const [location, setLocation] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [displayDeleteButton, setDisplayDeleteButton] = useState("");
+  const isFocused = useIsFocused();
+
+  const [expoPushToken, setExpoPushToken] = useState("");
+  const [notification, setNotification] = useState(false);
+  const notificationListener = useRef();
+  const responseListener = useRef();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token) =>
+      setExpoPushToken(token)
+    );
+
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        setNotification(notification);
+      });
+
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log(response);
+      });
+
+    return () => {
+      Notifications.removeNotificationSubscription(
+        notificationListener.current
+      );
+      Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
+
+  const deleteUser = (userId) => {
+    return Alert.alert(
+      "Delete User",
+      "Are you sure you want to delete this user",
+      [
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              const response = await axios.delete(apiUrl + `/users/${userId}`);
+              if (response.status != 200)
+                return Alert.alert("Error", "Failed to delete user");
+              setUsers((prev) => prev.filter((user) => user._id != userId));
+              Alert.alert("Success", "User deleted successfully");
+            } catch (error) {
+              console.error("Error deleting user:", error);
+              Alert.alert("Error", "Failed to delete user");
+            }
+          },
+        },
+        { text: "No" },
+      ]
+    );
+  };
 
   useEffect(() => {
     (async () => {
       const { status } = await Contacts.requestPermissionsAsync();
-
-      if (status === "granted") {
-        const { data } = await Contacts.getContactsAsync();
-        setContacts(data);
+      if (isFocused && status != "granted") {
+        return Alert.alert(
+          "Grant contact permission",
+          "You need to grant contact permission for this app to work properly.",
+          [{ text: "ok", onPress: () => BackHandler.exitApp() }]
+        );
       }
+      const { data } = await Contacts.getContactsAsync();
+      setContacts(data);
     })();
   }, []);
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
-      let location = await Location.getCurrentPositionAsync({});
-      console.log("locaTION", location);
+      if (isFocused && status != "granted") {
+        return Alert.alert(
+          "Grant location permission",
+          "You need to grant location permission for this app to work properly.",
+          [{ text: "ok", onPress: () => BackHandler.exitApp() }]
+        );
+      }
+      let location = await Location.getCurrentPositionAsync();
       setLocation(location);
     })();
-  }, []);
+  }, [isFocused]);
 
   useEffect(() => {
+    const socket = io(apiUrl);
+
     const fetchUsers = async () => {
       const token = await AsyncStorage.getItem("authToken");
       const decodedToken = jwt_decode(token);
@@ -211,7 +335,11 @@ const HomeScreen = () => {
           >
             All
           </Text>
-          <Pressable onPress={() => navigation.navigate("Request")}>
+          <Pressable
+            onPress={() => {
+              navigation.navigate("Request");
+            }}
+          >
             <Text
               style={{
                 color: "white",
@@ -243,7 +371,14 @@ const HomeScreen = () => {
             style={{ width: "100%", marginRight: -36 }}
             data={users}
             renderItem={({ index, item }) => (
-              <UserCard key={index} index={index} user={item} />
+              <UserCard
+                key={index}
+                index={index}
+                user={item}
+                setDisplayDeleteButton={setDisplayDeleteButton}
+                displayDeleteButton={displayDeleteButton}
+                deleteUser={deleteUser}
+              />
             )}
             keyExtractor={(item) => item._id}
           />
@@ -274,6 +409,7 @@ const HomeScreen = () => {
               friends={userFriends}
               handleRequestButton={handleRequestButton}
               friendRequests={friendRequests}
+              handleNotification={handlePushNotification}
             />
           ))
         )}
