@@ -450,6 +450,39 @@ app.post("/deleteMessages", async (req, res) => {
   }
 });
 
+app.post("/forwardMessage", async (req, res) => {
+  try {
+    const {senderId, recepientId, forwardedMessages} = req.body;
+
+    // Forward each selected message
+    for (const messageId of forwardedMessages) {
+      const message = await Message.findById(messageId);
+
+      if (message) {
+        const newForwardedMessage = new Message({
+          senderId,
+          recepientId,
+          messageType: message.messageType,
+          message: message.message,
+          timestamp: new Date(),
+          imageUrl: message.imageUrl,
+          forwardedFrom: messageId, // Store the original message ID
+        });
+
+        await newForwardedMessage.save();
+
+        // Emit the forwarded message to the recepient via socket.io
+        io.emit("newForwardedMessage", newForwardedMessage);
+      }
+    }
+
+    res.status(200).json({message: "Messages forwarded successfully"});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({error: "Internal Server Error"});
+  }
+});
+
 app.get("/friend-requests/sent/:userId", async (req, res) => {
   try {
     const {userId} = req.params;

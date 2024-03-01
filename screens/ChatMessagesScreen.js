@@ -26,7 +26,7 @@ import {useNavigation, useRoute} from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import {io} from "socket.io-client";
 
-const socket = io("http://10.0.67.114:8000");
+const socket = io("http://192.168.1.4:8000");
 
 const ChatMessagesScreen = () => {
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
@@ -63,7 +63,7 @@ const ChatMessagesScreen = () => {
   const fetchMessages = async () => {
     try {
       const response = await fetch(
-        `http://10.0.67.114:8000/messages/${userId}/${recepientId}`
+        `http://192.168.1.4:8000/messages/${userId}/${recepientId}`
       );
       const data = await response.json();
 
@@ -85,7 +85,7 @@ const ChatMessagesScreen = () => {
     const fetchRecepientData = async () => {
       try {
         const response = await fetch(
-          `http://10.0.67.114:8000/user/${recepientId}`
+          `http://192.168.1.4:8000/user/${recepientId}`
         );
 
         const data = await response.json();
@@ -128,7 +128,7 @@ const ChatMessagesScreen = () => {
         formData.append("messageText", message);
       }
 
-      const response = await fetch("http://10.0.67.114:8000/messages", {
+      const response = await fetch("http://192.168.1.4:8000/messages", {
         method: "POST",
         body: formData,
       });
@@ -143,6 +143,16 @@ const ChatMessagesScreen = () => {
       }
     } catch (error) {
       console.log("error in sending the message", error);
+    }
+  };
+
+  const handleForward = async () => {
+    if (selectedMessages.length > 0) {
+      navigation.navigate("ForwardMessage", {
+        selectedMessages,
+        userId,
+        recepientId,
+      });
     }
   };
 
@@ -196,6 +206,12 @@ const ChatMessagesScreen = () => {
               size={24}
               color="black"
             />
+            <Entypo
+              onPress={handleForward}
+              name="forward"
+              size={24}
+              color="black"
+            />
           </View>
         ) : null,
     });
@@ -203,7 +219,7 @@ const ChatMessagesScreen = () => {
 
   const deleteMessages = async (messageIds) => {
     try {
-      const response = await fetch("http://10.0.67.114:8000/deleteMessages", {
+      const response = await fetch("http://192.168.1.4:8000/deleteMessages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

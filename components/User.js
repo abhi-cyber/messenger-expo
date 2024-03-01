@@ -1,10 +1,10 @@
-import {StyleSheet, Text, View, Pressable, Image, Alert } from "react-native";
+import {StyleSheet, Text, View, Pressable, Image, Alert} from "react-native";
 import React, {useContext, useState, useEffect} from "react";
 import {UserType} from "../UserContext";
 import axios from "axios";
 import {io} from "socket.io-client";
 
-const socket = io("http://10.0.67.114:8000");
+const socket = io("http://192.168.1.4:8000");
 
 const User = ({item, isAdmin}) => {
   const {userId, setUserId} = useContext(UserType);
@@ -16,7 +16,7 @@ const User = ({item, isAdmin}) => {
     const fetchFriendRequests = async () => {
       try {
         const response = await fetch(
-          `http://10.0.67.114:8000/friend-requests/sent/${userId}`
+          `http://192.168.1.4:8000/friend-requests/sent/${userId}`
         );
 
         const data = await response.json();
@@ -33,7 +33,7 @@ const User = ({item, isAdmin}) => {
     const fetchUserFriends = async () => {
       try {
         const response = await fetch(
-          `http://10.0.67.114:8000/friends/${userId}`
+          `http://192.168.1.4:8000/friends/${userId}`
         );
 
         const data = await response.json();
@@ -64,7 +64,7 @@ const User = ({item, isAdmin}) => {
 
   const sendFriendRequest = async (currentUserId, selectedUserId) => {
     try {
-      const response = await fetch("http://10.0.67.114:8000/friend-request", {
+      const response = await fetch("http://192.168.1.4:8000/friend-request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +83,7 @@ const User = ({item, isAdmin}) => {
   const deleteUser = async (userId) => {
     try {
       const response = await axios.delete(
-        `http://10.0.67.114:8000/users/${userId}`
+        `http://192.168.1.4:8000/users/${userId}`
       );
       if (response.status === 200) {
         Alert.alert("Success", "User deleted successfully");

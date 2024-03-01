@@ -41,7 +41,7 @@ const LoginScreen = () => {
     };
 
     axios
-      .post("http://10.0.67.114:8000/login", user)
+      .post("http://192.168.1.4:8000/login", user)
       .then((response) => {
         const {token, isAdmin} = response.data;
         AsyncStorage.setItem("authToken", token);
