@@ -9,7 +9,6 @@ import FriendsScreen from "./screens/FriendsScreen";
 import ChatsScreen from "./screens/ChatsScreen";
 import ChatMessagesScreen from "./screens/ChatMessagesScreen";
 import ForwardMessageScreen from "./screens/ForwardMessageScreen";
-import ConfirmForwardScreen from "./screens/ConfirmForwardScreen";
 
 const StackNavigator = () => {
   const Stack = createNativeStackNavigator();
