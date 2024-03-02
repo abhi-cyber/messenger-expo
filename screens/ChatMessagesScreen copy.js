@@ -48,11 +48,11 @@ const ChatMessagesScreen = () => {
   const { userId } = useUserId();
 
   // webrtc
+  let peer = new PeerService();
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [localStream, setLocalStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [onCall, setOnCall] = useState(false);
-  const peer = useMemo(() => new PeerService(), []);
 
   useEffect(() => {
     if (recepientId && userId) {
@@ -62,15 +62,29 @@ const ChatMessagesScreen = () => {
     }
   }, [recepientId, userId, socket]);
 
+  // useEffect(() => {
+  //   const handleJoinRoom = (data) => {
+  //     return;
+  //   };
+  //   socket.on("room:join", handleJoinRoom);
+  //   return () => {
+  //     socket.off("room:join", handleJoinRoom);
+  //   };
+  // }, [socket]);
+
   const handleUserJoined = useCallback(({ id }) => {
+    setRemoteSocketId(id);
     socket.emit("room:join:admit", { id });
+  }, []);
+
+  const handleUserAdmit = useCallback(({ id }) => {
     setRemoteSocketId(id);
   }, []);
 
   const handleCallUser = useCallback(async () => {
     const stream = await mediaDevices.getUserMedia({
       audio: true,
-      video: false,
+      video: true,
     });
     const offer = await peer.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
@@ -81,10 +95,9 @@ const ChatMessagesScreen = () => {
     async ({ from, offer }) => {
       const stream = await mediaDevices.getUserMedia({
         audio: true,
-        video: false,
+        video: true,
       });
       setLocalStream(stream);
-      console.log(`Incoming Call`, from, offer);
       const ans = await peer.getAnswer(offer);
       socket.emit("call:accepted", { to: from, ans });
       setOnCall(true);
@@ -106,6 +119,7 @@ const ChatMessagesScreen = () => {
           )
       )
         return;
+
       peer.peer.addTrack(track, localStream);
     }
   }, [localStream]);
@@ -113,27 +127,11 @@ const ChatMessagesScreen = () => {
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
       peer.setLocalDescription(ans);
-      console.log("Call Accepted!");
       sendStreams();
-      socket.emit("sendStream", { to: from });
+      // socket.emit("sendStream", { to: from });
     },
     [sendStreams]
   );
-
-  const handleStream = useCallback(() => {
-    setTimeout(() => {
-      sendStreams();
-    }, 500);
-  }, [sendStreams]);
-
-  const handleCallEnd = useCallback(() => {
-    peer.peer.close();
-    setOnCall(false);
-  }, []);
-
-  const handleUserAdmit = useCallback(({ id }) => {
-    setRemoteSocketId(id);
-  }, []);
 
   const handleNegoNeeded = useCallback(async () => {
     const offer = await peer.getOffer();
@@ -167,12 +165,18 @@ const ChatMessagesScreen = () => {
     });
   }, []);
 
+  const handleCallEnd = useCallback(() => {
+    peer.peer.close();
+    peer = new PeerService();
+    setOnCall(false);
+  }, []);
+
   useEffect(() => {
     socket.on("user:joined", handleUserJoined);
     socket.on("user:admit", handleUserAdmit);
     socket.on("incomming:call", handleIncommingCall);
     socket.on("call:accepted", handleCallAccepted);
-    socket.on("sendStream", handleStream);
+    // socket.on("sendStream", sendStreams);
     socket.on("peer:nego:needed", handleNegoNeedIncomming);
     socket.on("peer:nego:final", handleNegoNeedFinal);
     socket.on("call:end", handleCallEnd);
@@ -182,10 +186,10 @@ const ChatMessagesScreen = () => {
       socket.off("user:admit", handleUserAdmit);
       socket.off("incomming:call", handleIncommingCall);
       socket.off("call:accepted", handleCallAccepted);
-      socket.on("sendStream", handleStream);
       socket.off("peer:nego:needed", handleNegoNeedIncomming);
       socket.off("peer:nego:final", handleNegoNeedFinal);
       socket.off("call:end", handleCallEnd);
+      // socket.off("sendStream", sendStreams);
     };
   }, [
     socket,
@@ -193,10 +197,10 @@ const ChatMessagesScreen = () => {
     handleUserAdmit,
     handleIncommingCall,
     handleCallAccepted,
-    handleStream,
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
     handleCallEnd,
+    sendStreams,
   ]);
   // webrtc
 
@@ -361,7 +365,8 @@ const ChatMessagesScreen = () => {
                 setOnCall((prev) => {
                   if (prev) {
                     socket.emit("call:end", { to: remoteSocketId });
-                    handleCallEnd();
+                    peer.peer.close();
+                    peer = new PeerService();
                   } else {
                     handleCallUser();
                   }
@@ -382,7 +387,7 @@ const ChatMessagesScreen = () => {
         </View>
       ),
     });
-  }, [recepientData, socket, onCall, handleCallUser, remoteSocketId]);
+  }, [recepientData, onCall, socket, handleCallUser, remoteSocketId]);
 
   const deleteMessages = async (messageIds) => {
     try {
@@ -648,8 +653,19 @@ const ChatMessagesScreen = () => {
         </View>
       </View> */}
       {/* </Modal> */}
-      {localStream && <RTCView streamURL={localStream.toURL()} />}
-      {remoteStream && <RTCView streamURL={remoteStream.toURL()} />}
+      {localStream && (
+        <RTCView
+          style={{ height: 400, width: 400 }}
+          streamURL={localStream.toURL()}
+        />
+      )}
+      {remoteStream && (
+        <RTCView
+          style={{ height: 400, width: 400 }}
+          streamURL={remoteStream.toURL()}
+        />
+      )}
+      {localStream && <Button title="send stream" onPress={sendStreams} />}
       <ScrollView
         ref={scrollViewRef}
         style={{ height: "100%" }}

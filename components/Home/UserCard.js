@@ -13,7 +13,7 @@ export default ({
   displayDeleteButton,
   setDisplayDeleteButton,
   deleteUser,
-  handleNotification,
+  handleSelectedForwardUser,
 }) => {
   const { userId } = useUserId();
   const navigation = useNavigation();
@@ -28,7 +28,6 @@ export default ({
           (message) => message.senderId === user._id
         ).length;
         setUnreadMessages(unreadCount);
-        handleNotification();
       } else {
         console.log("Error fetching messages:", response.status.message);
       }

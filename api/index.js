@@ -34,9 +34,52 @@ mongoose
     console.log("Error connecting to MongoDb", err);
   });
 
+const userIdToSocketIdMap = new Map();
+const socketIdToUserIdMap = new Map();
+
 // socket.io SETUP
 io.on("connection", (socket) => {
   console.log("A user connected");
+
+  // webrtc
+  socket.on("room:join", ({ userId, room }) => {
+    userIdToSocketIdMap.set(userId, socket.id);
+    socketIdToUserIdMap.set(socket.id, userId);
+    io.to(room).emit("user:joined", { id: socket.id });
+    socket.join(room);
+    // io.to(socket.id).emit("room:join", data);
+  });
+
+  socket.on("room:join:admit", ({ id }) => {
+    io.to(id).emit("user:admit", { id: socket.id });
+  });
+
+  socket.on("user:call", ({ to, offer }) => {
+    io.to(to).emit("incomming:call", { from: socket.id, offer });
+  });
+
+  socket.on("call:accepted", ({ to, ans }) => {
+    io.to(to).emit("call:accepted", { from: socket.id, ans });
+  });
+
+  socket.on("sendStream", ({ to }) => {
+    io.to(to).emit("sendStream");
+  });
+
+  socket.on("peer:nego:needed", ({ to, offer }) => {
+    console.log("peer:nego:needed", offer);
+    io.to(to).emit("peer:nego:needed", { from: socket.id, offer });
+  });
+
+  socket.on("peer:nego:done", ({ to, ans }) => {
+    console.log("peer:nego:done", ans);
+    io.to(to).emit("peer:nego:final", { from: socket.id, ans });
+  });
+
+  socket.on("call:end", ({ to }) => {
+    io.to(to).emit("call:end");
+  });
+  // webrtc
 
   socket.on("newMessage", (response) => {
     try {

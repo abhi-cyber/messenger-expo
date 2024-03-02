@@ -7,7 +7,7 @@ import {
   BackHandler,
 } from "react-native";
 import { useLayoutEffect, useState, useEffect, useRef } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appName } from "../constants/consts";
 import styleUtils, { secondary } from "../constants/style";
@@ -21,57 +21,7 @@ import * as Location from "expo-location";
 import * as Contacts from "expo-contacts";
 import * as Notifications from "expo-notifications";
 import { useIsFocused } from "@react-navigation/native";
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
-async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
-      return;
-    }
-    token = (
-      await Notifications.getExpoPushTokenAsync({
-        projectId: "your-project-id",
-      })
-    ).data;
-    console.log(token);
-  } else {
-    alert("Must use physical device for Push Notifications");
-  }
-
-  return token;
-}
-
-const handlePushNotification = async () => {
-  await Notifications.scheduleNotificationAsync({
-    trigger: { seconds: 2 },
-  });
-};
+import * as Device from "expo-device";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -91,28 +41,13 @@ const HomeScreen = () => {
   const notificationListener = useRef();
   const responseListener = useRef();
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then((token) =>
-      setExpoPushToken(token)
-    );
+  const route = useRoute();
+  const [selectedForwardUser, setSelectedForwardUser] = useState([]);
+  const forwardMsg = route.params?.forwardMsg || "";
 
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        setNotification(notification);
-      });
-
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
-      });
-
-    return () => {
-      Notifications.removeNotificationSubscription(
-        notificationListener.current
-      );
-      Notifications.removeNotificationSubscription(responseListener.current);
-    };
-  }, []);
+  const handleSelectedForwardUser = (forwardUserId) => {
+    setSelectedForwardUser((prev) => prev.push(forwardUserId));
+  };
 
   const deleteUser = (userId) => {
     return Alert.alert(
@@ -375,6 +310,7 @@ const HomeScreen = () => {
                 key={index}
                 index={index}
                 user={item}
+                handleSelectedForwardUser={handleSelectedForwardUser}
                 setDisplayDeleteButton={setDisplayDeleteButton}
                 displayDeleteButton={displayDeleteButton}
                 deleteUser={deleteUser}
@@ -409,7 +345,6 @@ const HomeScreen = () => {
               friends={userFriends}
               handleRequestButton={handleRequestButton}
               friendRequests={friendRequests}
-              handleNotification={handlePushNotification}
             />
           ))
         )}

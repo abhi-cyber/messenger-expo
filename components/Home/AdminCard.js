@@ -12,11 +12,11 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
   useEffect(() => {
     const isInFriendList = friends.some((friend) => friend == admin._id);
     setIsFriends(isInFriendList);
-    if (isInFriendList) {
-      navigation.navigate("Messages", {
-        recepientId: admin._id,
-      });
-    }
+    // if (isInFriendList) {
+    //   navigation.navigate("Messages", {
+    //     recepientId: admin._id,
+    //   });
+    // }
   }, [friends]);
 
   useEffect(() => {
