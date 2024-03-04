@@ -11,10 +11,24 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import User from "./models/user.js";
 import Message from "./models/message.js";
+import { Expo } from "expo-server-sdk";
 
 const app = express();
 const server = http.createServer(app);
 const io = new SocketIOServer(server);
+// let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+let expo = new Expo();
+const pushToken = "";
+
+if (Expo.isExpoPushToken(pushToken)) {
+  await expo.sendPushNotificationsAsync({
+    to: pushToken,
+    sound: "default",
+    title: "incoming call...",
+    body: "kamal kumar is calling",
+    data: { recepientId: "shsgiolk" },
+  });
+}
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));

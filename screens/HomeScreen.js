@@ -19,9 +19,7 @@ import { apiUrl } from "../constants/consts";
 import { io } from "socket.io-client";
 import * as Location from "expo-location";
 import * as Contacts from "expo-contacts";
-import * as Notifications from "expo-notifications";
 import { useIsFocused } from "@react-navigation/native";
-import * as Device from "expo-device";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -35,11 +33,6 @@ const HomeScreen = () => {
   const [contacts, setContacts] = useState([]);
   const [displayDeleteButton, setDisplayDeleteButton] = useState("");
   const isFocused = useIsFocused();
-
-  const [expoPushToken, setExpoPushToken] = useState("");
-  const [notification, setNotification] = useState(false);
-  const notificationListener = useRef();
-  const responseListener = useRef();
 
   const route = useRoute();
   const [selectedForwardUser, setSelectedForwardUser] = useState([]);

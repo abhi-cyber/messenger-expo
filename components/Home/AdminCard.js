@@ -3,6 +3,7 @@ import adminIcon from "../../assets/admin.png";
 import { accent, secondary, tertiary, vw } from "../../constants/style";
 import { useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
+import * as Notifications from "expo-notifications";
 
 export default ({ handleRequestButton, admin, friendRequests, friends }) => {
   const [isRequestSent, setIsRequestSent] = useState(false);
@@ -85,11 +86,12 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate("Messages", {
-              recepientId: admin._id,
-            })
-          }
+          onPress={() => {
+            schedulePushNotification();
+            // navigation.navigate("Messages", {
+            //   recepientId: admin._id,
+            // });
+          }}
           style={{
             width: vw(50),
             backgroundColor: secondary,
@@ -113,3 +115,14 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
     </>
   );
 };
+
+async function schedulePushNotification() {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "incoming call...",
+      body: "kamal kumar is calling",
+      data: { data: "goes here" },
+    },
+    trigger: { seconds: 0 },
+  });
+}

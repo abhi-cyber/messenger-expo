@@ -1,4 +1,4 @@
-import { Feather, Entypo, MaterialIcons } from "@expo/vector-icons";
+import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
@@ -19,7 +19,6 @@ import {
   Image,
   TouchableOpacity,
   Modal,
-  Button,
 } from "react-native";
 import React, {
   useState,
