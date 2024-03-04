@@ -28,7 +28,7 @@ const ForwardMessageScreen = ({route}) => {
       setUserName(decodedToken.userName);
 
       axios
-        .get(`http://192.168.1.4:8000/users/${userId}`)
+        .get(`http://192.168.130.175:8000/users/${userId}`)
         .then((response) => {
           if (isAdmin) {
             setUsers(response.data);
@@ -52,14 +52,14 @@ const ForwardMessageScreen = ({route}) => {
     if (selectedMessages && selectedMessages.length > 0) {
       // Forward each selected message to the selected user directly
       axios
-        .post("http://192.168.1.4:8000/forwardMessage", {
+        .post("http://192.168.130.175:8000/forwardMessage", {
           senderId: userId,
           recepientId: selectedUserId,
           forwardedMessages: selectedMessages,
         })
         .then((response) => {
           console.log(response.data);
-          navigation.navigate('Chats')
+          navigation.navigate("Chats");
         })
         .catch((error) => {
           console.log("error forwarding messages", error);
