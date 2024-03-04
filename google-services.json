@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "428143871415",
+    "project_id": "messenger-413512",
+    "storage_bucket": "messenger-413512.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428143871415:android:fc7317dffe93941ff15432",
+        "android_client_info": {
+          "package_name": "com.sudokamal.messengerproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcAJR1BRFc7ZKdBVtzZ_DNp3MnXh1axuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

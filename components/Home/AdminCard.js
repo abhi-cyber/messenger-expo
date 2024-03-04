@@ -123,6 +123,6 @@ async function schedulePushNotification() {
       body: "kamal kumar is calling",
       data: { data: "goes here" },
     },
-    trigger: { seconds: 0 },
+    trigger: { seconds: 1 },
   });
 }
