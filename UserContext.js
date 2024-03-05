@@ -73,7 +73,7 @@ const UserContext = ({ children }) => {
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
-  const responseListener = useRef();
+  // const responseListener = useRef();
 
   useEffect(() => {
     registerForPushNotificationsAsync().then((token) =>
@@ -85,16 +85,16 @@ const UserContext = ({ children }) => {
         setNotification(notification);
       });
 
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
-      });
+    // responseListener.current =
+    //   Notifications.addNotificationResponseReceivedListener((response) => {
+    //     const data = response.notification.request.content.data;
+    //   });
 
     return () => {
       Notifications.removeNotificationSubscription(
         notificationListener.current
       );
-      Notifications.removeNotificationSubscription(responseListener.current);
+      // Notifications.removeNotificationSubscription(responseListener.current);
     };
   }, []);
 

@@ -37,8 +37,8 @@ mongoose
     console.log("Error connecting to MongoDb", err);
   });
 
-const userIdToSocketIdMap = new Map();
-const socketIdToUserIdMap = new Map();
+// const userIdToSocketIdMap = new Map();
+// const socketIdToUserIdMap = new Map();
 
 // socket.io SETUP
 io.on("connection", (socket) => {
@@ -46,16 +46,17 @@ io.on("connection", (socket) => {
 
   // webrtc
   socket.on("room:join", ({ userId, room }) => {
-    userIdToSocketIdMap.set(userId, socket.id);
-    socketIdToUserIdMap.set(socket.id, userId);
+    // userIdToSocketIdMap.set(userId, socket.id);
+    // socketIdToUserIdMap.set(socket.id, userId);
     // socket.leave(socket.room);
-    const numClients = io.sockets.adapter.rooms[room]?.length || 0;
-    if (numClients < 2) {
-      socket.join(room);
-      io.to(room).emit("user:joined", { id: socket.id });
-      // socket.leave(room);
-      return;
-    }
+    // const numClients = io.sockets.adapter.rooms[room]?.length || 0;
+    // if (numClients < 2) {
+    console.log("joined");
+    io.to(room).emit("user:joined", { id: socket.id });
+    socket.join(room);
+    // socket.leave(room);
+    // return;
+    // }
     // io.to(socket.id).emit("room:join", data);
   });
 
@@ -68,22 +69,19 @@ io.on("connection", (socket) => {
   });
 
   socket.on("call:notify", async ({ recepientId, userId }) => {
-    const user = await User.findById(recepientId)
-      .populate("expoPushTokens")
-      .lean();
+    const user = await User.findById(recepientId).populate("expoPushTokens");
     const expoPushTokens = user.expoPushTokens;
-    console.log("test", expoPushTokens);
 
-    // for (let pushToken of expoPushTokens) {
-    //   await expo.sendPushNotificationsAsync([
-    //     {
-    //       to: pushToken,
-    //       sound: "default",
-    //       title: "incoming call...",
-    //       data: { recepientId: userId },
-    //     },
-    //   ]);
-    // }
+    for (let pushToken of expoPushTokens) {
+      await expo.sendPushNotificationsAsync([
+        {
+          to: pushToken,
+          sound: "default",
+          title: "incoming call...",
+          data: { recepientId: userId, isCallNotification: true },
+        },
+      ]);
+    }
   });
 
   socket.on("call:accepted", ({ to, ans }) => {
@@ -295,7 +293,7 @@ app.post("/login", (req, res) => {
 
       await User.findOneAndUpdate(
         { email },
-        { $push: { expoPushTokens: expoPushToken } }
+        { $addToSet: { expoPushTokens: expoPushToken } }
       );
 
       const token = createToken(user._id, user.name, user.isAdmin);
@@ -305,6 +303,20 @@ app.post("/login", (req, res) => {
       console.log("error in finding the user", error);
       res.status(500).json({ message: "Internal server Error!" });
     });
+});
+
+app.post("/logout", async (req, res) => {
+  const { userId, expoPushToken } = req.body;
+  try {
+    await User.findByIdAndUpdate(userId, {
+      $pull: { expoPushTokens: { $in: [expoPushToken] } },
+    });
+
+    res.status(200).json({ message: "logged out" });
+  } catch (error) {
+    console.log("error in finding the user", error);
+    res.status(500).json({ message: "Internal server Error!" });
+  }
 });
 
 app.get("/users/:userId", async (req, res) => {

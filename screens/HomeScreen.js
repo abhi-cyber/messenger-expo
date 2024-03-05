@@ -22,7 +22,7 @@ import { useIsFocused } from "@react-navigation/native";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { userId, setUserId, socket } = useUserId();
+  const { userId, setUserId, socket, expoPushToken } = useUserId();
   const [users, setUsers] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [adminFriendRequests, setAdminFriendRequests] = useState([]);
@@ -188,6 +188,14 @@ const HomeScreen = () => {
       try {
         // Clear the token from AsyncStorage
         await AsyncStorage.removeItem("authToken");
+
+        await fetch(apiUrl + "/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId, expoPushToken }),
+        });
         // Navigate back to the Login screen
         navigation.replace("Login");
       } catch (error) {

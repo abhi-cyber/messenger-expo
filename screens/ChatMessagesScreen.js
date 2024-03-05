@@ -1,6 +1,7 @@
-import { Entypo, MaterialIcons } from "@expo/vector-icons";
+import { Feather, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import { io } from "socket.io-client";
 import { apiUrl } from "../constants/consts";
 import { useUserId } from "../UserContext";
 import adminAvatar from "../assets/admin.png";
@@ -18,13 +19,21 @@ import {
   Image,
   TouchableOpacity,
   Modal,
+  Button,
 } from "react-native";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import * as Clipboard from "expo-clipboard";
 import { mediaDevices, RTCView } from "react-native-webrtc";
 import PeerService from "../peer";
 
 const ChatMessagesScreen = () => {
+  const socket = useMemo(() => io(apiUrl), []);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userName, setUserName] = useState("");
@@ -36,7 +45,7 @@ const ChatMessagesScreen = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
   const { recepientId } = route.params;
-  const { userId, socket } = useUserId();
+  const { userId } = useUserId();
 
   // webrtc
   const [remoteSocketId, setRemoteSocketId] = useState(null);
@@ -114,7 +123,7 @@ const ChatMessagesScreen = () => {
   const handleStream = useCallback(() => {
     setTimeout(() => {
       sendStreams();
-    }, 250);
+    }, 400);
   }, [sendStreams]);
 
   const handleCallEnd = useCallback(() => {
@@ -350,21 +359,17 @@ const ChatMessagesScreen = () => {
       ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => {
               setOnCall((prev) => {
                 if (prev) {
                   socket.emit("call:end", { to: remoteSocketId });
                   handleCallEnd();
                 } else {
-                  if (!remoteSocketId) {
-                    socket.emit("call:notify", { recepientId, userId });
-                    while (!remoteSocketId) setTimeout(null, 400);
-                  }
-                  console.log("hskgs", remoteSocketId);
+                  socket.emit("call:notify", { recepientId, userId });
                   handleCallUser();
                 }
-                return !prev;
+                return remoteSocketId ? !prev : prev;
               });
             }}
           >
@@ -373,7 +378,7 @@ const ChatMessagesScreen = () => {
             ) : (
               <MaterialIcons name="call" size={28} color="white" />
             )}
-          </TouchableOpacity>
+          </Pressable>
           <Pressable onPress={handleLogout}>
             <Text style={{ color: "white", fontSize: 18 }}>Logout</Text>
           </Pressable>

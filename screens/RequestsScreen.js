@@ -25,6 +25,7 @@ const RequestsScreen = () => {
   const [friendRequests, setFriendRequests] = useState([]);
   const [adminFriendRequests, setAdminFriendRequests] = useState([]);
   const [userFriends, setUserFriends] = useState([]);
+  const { expoPushToken } = useUserId();
 
   useEffect(() => {
     const fetchFriendRequests = async () => {
@@ -55,6 +56,14 @@ const RequestsScreen = () => {
       try {
         // Clear the token from AsyncStorage
         await AsyncStorage.removeItem("authToken");
+
+        await fetch(apiUrl + "/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId, expoPushToken }),
+        });
         // Navigate back to the Login screen
         navigation.replace("Login");
       } catch (error) {
