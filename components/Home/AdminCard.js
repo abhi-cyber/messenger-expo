@@ -87,10 +87,9 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
       ) : (
         <TouchableOpacity
           onPress={() => {
-            schedulePushNotification();
-            // navigation.navigate("Messages", {
-            //   recepientId: admin._id,
-            // });
+            navigation.navigate("Messages", {
+              recepientId: admin._id,
+            });
           }}
           style={{
             width: vw(50),
@@ -115,14 +114,3 @@ export default ({ handleRequestButton, admin, friendRequests, friends }) => {
     </>
   );
 };
-
-async function schedulePushNotification() {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "incoming call...",
-      body: "kamal kumar is calling",
-      data: { data: "goes here" },
-    },
-    trigger: { seconds: 1 },
-  });
-}

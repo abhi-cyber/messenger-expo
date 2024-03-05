@@ -49,7 +49,7 @@ const Register = ({
           <Text style={[styleUtils.SubText, { color: secondary }]}>Email</Text>
           <TextInput
             value={email}
-            onChangeText={(text) => setEmail(text.toLowerCase())}
+            onChangeText={(text) => setEmail(text.trim().toLowerCase())}
             style={[
               styleUtils.SubText,
               {

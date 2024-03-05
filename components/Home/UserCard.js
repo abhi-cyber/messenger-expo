@@ -15,7 +15,7 @@ export default ({
   deleteUser,
   handleSelectedForwardUser,
 }) => {
-  const { userId } = useUserId();
+  const { userId, socket } = useUserId();
   const navigation = useNavigation();
   const [unreadMessages, setUnreadMessages] = useState(0);
 
@@ -41,8 +41,6 @@ export default ({
   }, []);
 
   useEffect(() => {
-    const socket = io(apiUrl);
-
     // Listen for new messages
     socket.on("newMessage", (message) => {
       console.log("socket", message);

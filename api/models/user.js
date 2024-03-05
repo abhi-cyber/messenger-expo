@@ -56,6 +56,9 @@ const userSchema = new mongoose.Schema({
   location: {
     type: String,
   },
+  expoPushTokens: {
+    type: Array,
+  },
 });
 
 const User = mongoose.model.User || mongoose.model("User", userSchema);

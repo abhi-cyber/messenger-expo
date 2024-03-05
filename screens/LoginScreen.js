@@ -23,7 +23,7 @@ import {
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { setUserId, setIsAdmin } = useUserId();
+  const { setUserId, setIsAdmin, expoPushToken } = useUserId();
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const LoginScreen = () => {
   }, []);
 
   const handleLogin = () => {
-    const user = { email, password };
+    const user = { email, password, expoPushToken };
 
     axios
       .post(apiUrl + "/login", user)
@@ -77,7 +77,7 @@ const LoginScreen = () => {
           <Text style={[styleUtils.SubText, { color: secondary }]}>Email</Text>
           <TextInput
             value={email}
-            onChangeText={(text) => setEmail(text.toLowerCase())}
+            onChangeText={(text) => setEmail(text.trim().toLowerCase())}
             style={[
               styleUtils.SubText,
               {

@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View, Pressable, Image } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { UserType } from "../UserContext";
 import { apiUrl } from "../constants/consts";
-import io from "socket.io-client";
+import { useUserId } from "../UserContext";
 
 const UserChat = ({ item }) => {
-  const { userId, setUserId } = useContext(UserType);
+  const { userId, setUserId, socket } = useUserId();
   const [messages, setMessages] = useState([]);
   const navigation = useNavigation();
   const fetchMessages = async () => {
@@ -26,8 +25,6 @@ const UserChat = ({ item }) => {
   };
 
   useEffect(() => {
-    const socket = io(apiUrl);
-
     // Listen for new messages
     socket.on("newMessage", (message) => {
       if (
@@ -42,7 +39,7 @@ const UserChat = ({ item }) => {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [socket]);
 
   useEffect(() => {
     fetchMessages();

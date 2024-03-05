@@ -1,7 +1,6 @@
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import { io } from "socket.io-client";
 import { apiUrl } from "../constants/consts";
 import { useUserId } from "../UserContext";
 import adminAvatar from "../assets/admin.png";
@@ -20,19 +19,12 @@ import {
   TouchableOpacity,
   Modal,
 } from "react-native";
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as Clipboard from "expo-clipboard";
 import { mediaDevices, RTCView } from "react-native-webrtc";
 import PeerService from "../peer";
 
 const ChatMessagesScreen = () => {
-  const socket = useMemo(() => io(apiUrl), []);
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userName, setUserName] = useState("");
@@ -44,14 +36,14 @@ const ChatMessagesScreen = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
   const { recepientId } = route.params;
-  const { userId } = useUserId();
+  const { userId, socket } = useUserId();
 
   // webrtc
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [localStream, setLocalStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [onCall, setOnCall] = useState(false);
-  const peer = useMemo(() => new PeerService(), []);
+  const peer = useRef(new PeerService());
 
   useEffect(() => {
     if (recepientId && userId) {
@@ -71,7 +63,7 @@ const ChatMessagesScreen = () => {
       audio: true,
       video: false,
     });
-    const offer = await peer.getOffer();
+    const offer = await peer.current.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
     setLocalStream(stream);
   }, [remoteSocketId, socket]);
@@ -84,7 +76,7 @@ const ChatMessagesScreen = () => {
       });
       setLocalStream(stream);
       console.log(`Incoming Call`, from, offer);
-      const ans = await peer.getAnswer(offer);
+      const ans = await peer.current.getAnswer(offer);
       socket.emit("call:accepted", { to: from, ans });
       setOnCall(true);
     },
@@ -95,7 +87,7 @@ const ChatMessagesScreen = () => {
     if (!localStream) return;
     for (const track of localStream.getTracks()) {
       if (
-        peer.peer
+        peer.current.peer
           .getSenders()
           .find(
             (sender) =>
@@ -105,13 +97,13 @@ const ChatMessagesScreen = () => {
           )
       )
         return;
-      peer.peer.addTrack(track, localStream);
+      peer.current.peer.addTrack(track, localStream);
     }
   }, [localStream]);
 
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
-      peer.setLocalDescription(ans);
+      peer.current.setLocalDescription(ans);
       console.log("Call Accepted!");
       sendStreams();
       socket.emit("sendStream", { to: from });
@@ -122,11 +114,12 @@ const ChatMessagesScreen = () => {
   const handleStream = useCallback(() => {
     setTimeout(() => {
       sendStreams();
-    }, 500);
+    }, 250);
   }, [sendStreams]);
 
   const handleCallEnd = useCallback(() => {
-    peer.peer.close();
+    peer.current.peer.close();
+    peer.current = new PeerService();
     setOnCall(false);
   }, []);
 
@@ -135,31 +128,34 @@ const ChatMessagesScreen = () => {
   }, []);
 
   const handleNegoNeeded = useCallback(async () => {
-    const offer = await peer.getOffer();
+    const offer = await peer.current.getOffer();
     socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
   }, [remoteSocketId, socket]);
 
   useEffect(() => {
-    peer.peer.addEventListener("negotiationneeded", handleNegoNeeded);
+    peer.current.peer.addEventListener("negotiationneeded", handleNegoNeeded);
     return () => {
-      peer.peer.removeEventListener("negotiationneeded", handleNegoNeeded);
+      peer.current.peer.removeEventListener(
+        "negotiationneeded",
+        handleNegoNeeded
+      );
     };
   }, [handleNegoNeeded]);
 
   const handleNegoNeedIncomming = useCallback(
     async ({ from, offer }) => {
-      const ans = await peer.getAnswer(offer);
+      const ans = await peer.current.getAnswer(offer);
       socket.emit("peer:nego:done", { to: from, ans });
     },
     [socket]
   );
 
   const handleNegoNeedFinal = useCallback(async ({ ans }) => {
-    await peer.setLocalDescription(ans);
+    await peer.current.setLocalDescription(ans);
   }, []);
 
   useEffect(() => {
-    peer.peer.addEventListener("track", async (ev) => {
+    peer.current.peer.addEventListener("track", async (ev) => {
       const remoteStream = ev.streams;
       console.log("GOT TRACKS!!");
       setRemoteStream(remoteStream[0]);
@@ -354,27 +350,30 @@ const ChatMessagesScreen = () => {
       ),
       headerRight: () => (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
-          {remoteSocketId && (
-            <Pressable
-              onPress={() => {
-                setOnCall((prev) => {
-                  if (prev) {
-                    socket.emit("call:end", { to: remoteSocketId });
-                    handleCallEnd();
-                  } else {
-                    handleCallUser();
+          <TouchableOpacity
+            onPress={() => {
+              setOnCall((prev) => {
+                if (prev) {
+                  socket.emit("call:end", { to: remoteSocketId });
+                  handleCallEnd();
+                } else {
+                  if (!remoteSocketId) {
+                    socket.emit("call:notify", { recepientId, userId });
+                    while (!remoteSocketId) setTimeout(null, 400);
                   }
-                  return !prev;
-                });
-              }}
-            >
-              {onCall ? (
-                <MaterialIcons name="call-end" size={28} color="white" />
-              ) : (
-                <MaterialIcons name="call" size={28} color="white" />
-              )}
-            </Pressable>
-          )}
+                  console.log("hskgs", remoteSocketId);
+                  handleCallUser();
+                }
+                return !prev;
+              });
+            }}
+          >
+            {onCall ? (
+              <MaterialIcons name="call-end" size={28} color="white" />
+            ) : (
+              <MaterialIcons name="call" size={28} color="white" />
+            )}
+          </TouchableOpacity>
           <Pressable onPress={handleLogout}>
             <Text style={{ color: "white", fontSize: 18 }}>Logout</Text>
           </Pressable>

@@ -18,17 +18,6 @@ const server = http.createServer(app);
 const io = new SocketIOServer(server);
 // let expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 let expo = new Expo();
-const pushToken = "";
-
-if (Expo.isExpoPushToken(pushToken)) {
-  await expo.sendPushNotificationsAsync({
-    to: pushToken,
-    sound: "default",
-    title: "incoming call...",
-    body: "kamal kumar is calling",
-    data: { recepientId: "shsgiolk" },
-  });
-}
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -59,8 +48,14 @@ io.on("connection", (socket) => {
   socket.on("room:join", ({ userId, room }) => {
     userIdToSocketIdMap.set(userId, socket.id);
     socketIdToUserIdMap.set(socket.id, userId);
-    io.to(room).emit("user:joined", { id: socket.id });
-    socket.join(room);
+    // socket.leave(socket.room);
+    const numClients = io.sockets.adapter.rooms[room]?.length || 0;
+    if (numClients < 2) {
+      socket.join(room);
+      io.to(room).emit("user:joined", { id: socket.id });
+      // socket.leave(room);
+      return;
+    }
     // io.to(socket.id).emit("room:join", data);
   });
 
@@ -72,6 +67,25 @@ io.on("connection", (socket) => {
     io.to(to).emit("incomming:call", { from: socket.id, offer });
   });
 
+  socket.on("call:notify", async ({ recepientId, userId }) => {
+    const user = await User.findById(recepientId)
+      .populate("expoPushTokens")
+      .lean();
+    const expoPushTokens = user.expoPushTokens;
+    console.log("test", expoPushTokens);
+
+    // for (let pushToken of expoPushTokens) {
+    //   await expo.sendPushNotificationsAsync([
+    //     {
+    //       to: pushToken,
+    //       sound: "default",
+    //       title: "incoming call...",
+    //       data: { recepientId: userId },
+    //     },
+    //   ]);
+    // }
+  });
+
   socket.on("call:accepted", ({ to, ans }) => {
     io.to(to).emit("call:accepted", { from: socket.id, ans });
   });
@@ -81,12 +95,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("peer:nego:needed", ({ to, offer }) => {
-    console.log("peer:nego:needed", offer);
     io.to(to).emit("peer:nego:needed", { from: socket.id, offer });
   });
 
   socket.on("peer:nego:done", ({ to, ans }) => {
-    console.log("peer:nego:done", ans);
     io.to(to).emit("peer:nego:final", { from: socket.id, ans });
   });
 
@@ -263,7 +275,7 @@ const createToken = (userId, userName, isAdmin) => {
 };
 
 app.post("/login", (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, expoPushToken } = req.body;
 
   if (!email || !password) {
     return res
@@ -272,7 +284,7 @@ app.post("/login", (req, res) => {
   }
 
   User.findOne({ email })
-    .then((user) => {
+    .then(async (user) => {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -280,6 +292,11 @@ app.post("/login", (req, res) => {
       if (user.password !== password) {
         return res.status(404).json({ message: "Invalid Password!" });
       }
+
+      await User.findOneAndUpdate(
+        { email },
+        { $push: { expoPushTokens: expoPushToken } }
+      );
 
       const token = createToken(user._id, user.name, user.isAdmin);
       res.status(200).json({ token, userName: user.name });

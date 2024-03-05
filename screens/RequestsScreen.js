@@ -15,10 +15,7 @@ import styleUtils, { secondary, accent, vh, vw } from "../constants/style";
 import jwt_decode from "jwt-decode";
 import { useUserId } from "../UserContext";
 import { apiUrl } from "../constants/consts";
-import { io } from "socket.io-client";
 import userIcon from "../assets/user.png";
-
-// const socket = io(apiUrl);
 
 const RequestsScreen = () => {
   const navigation = useNavigation();

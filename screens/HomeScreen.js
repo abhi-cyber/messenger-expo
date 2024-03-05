@@ -16,14 +16,13 @@ import { AdminCard, UserCard } from "../components/Home";
 import { useUserId } from "../UserContext";
 import axios from "axios";
 import { apiUrl } from "../constants/consts";
-import { io } from "socket.io-client";
 import * as Location from "expo-location";
 import * as Contacts from "expo-contacts";
 import { useIsFocused } from "@react-navigation/native";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { userId, setUserId } = useUserId();
+  const { userId, setUserId, socket } = useUserId();
   const [users, setUsers] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [adminFriendRequests, setAdminFriendRequests] = useState([]);
@@ -98,8 +97,6 @@ const HomeScreen = () => {
   }, [isFocused]);
 
   useEffect(() => {
-    const socket = io(apiUrl);
-
     const fetchUsers = async () => {
       const token = await AsyncStorage.getItem("authToken");
       const decodedToken = jwt_decode(token);
