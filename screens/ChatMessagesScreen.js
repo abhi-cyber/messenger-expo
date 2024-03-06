@@ -45,13 +45,14 @@ const ChatMessagesScreen = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const route = useRoute();
   const { recepientId } = route.params;
-  const { userId } = useUserId();
+  const { userId, expoPushToken } = useUserId();
 
   // webrtc
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [localStream, setLocalStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [onCall, setOnCall] = useState(false);
+  const [isCallNotificationSent, setIsCallNotificationSent] = useState(false);
   const peer = useRef(new PeerService());
 
   useEffect(() => {
@@ -62,10 +63,19 @@ const ChatMessagesScreen = () => {
     }
   }, [recepientId, userId, socket]);
 
-  const handleUserJoined = useCallback(({ id }) => {
-    socket.emit("room:join:admit", { id });
-    setRemoteSocketId(id);
-  }, []);
+  useEffect(() => {
+    if (isCallNotificationSent && remoteSocketId) {
+      handleCallUser();
+    }
+  }, [isCallNotificationSent, remoteSocketId]);
+
+  const handleUserJoined = useCallback(
+    ({ id }) => {
+      socket.emit("room:join:admit", { id });
+      setRemoteSocketId(id);
+    },
+    [socket]
+  );
 
   const handleCallUser = useCallback(async () => {
     const stream = await mediaDevices.getUserMedia({
@@ -75,7 +85,7 @@ const ChatMessagesScreen = () => {
     const offer = await peer.current.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
     setLocalStream(stream);
-  }, [remoteSocketId, socket]);
+  }, [remoteSocketId, socket, peer]);
 
   const handleIncommingCall = useCallback(
     async ({ from, offer }) => {
@@ -84,12 +94,12 @@ const ChatMessagesScreen = () => {
         video: false,
       });
       setLocalStream(stream);
-      console.log(`Incoming Call`, from, offer);
+      console.log(`Incoming Call`);
       const ans = await peer.current.getAnswer(offer);
       socket.emit("call:accepted", { to: from, ans });
       setOnCall(true);
     },
-    [socket]
+    [socket, peer]
   );
 
   const sendStreams = useCallback(() => {
@@ -104,11 +114,12 @@ const ChatMessagesScreen = () => {
               sender.track.kind === track.kind &&
               sender.track.id === track.id
           )
-      )
+      ) {
         return;
+      }
       peer.current.peer.addTrack(track, localStream);
     }
-  }, [localStream]);
+  }, [localStream, peer]);
 
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
@@ -117,20 +128,22 @@ const ChatMessagesScreen = () => {
       sendStreams();
       socket.emit("sendStream", { to: from });
     },
-    [sendStreams]
+    [sendStreams, peer]
   );
 
   const handleStream = useCallback(() => {
     setTimeout(() => {
       sendStreams();
-    }, 400);
+    }, 500);
   }, [sendStreams]);
 
   const handleCallEnd = useCallback(() => {
     peer.current.peer.close();
     peer.current = new PeerService();
+    setLocalStream(null);
+    setRemoteStream(null);
     setOnCall(false);
-  }, []);
+  }, [peer]);
 
   const handleUserAdmit = useCallback(({ id }) => {
     setRemoteSocketId(id);
@@ -139,7 +152,7 @@ const ChatMessagesScreen = () => {
   const handleNegoNeeded = useCallback(async () => {
     const offer = await peer.current.getOffer();
     socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
-  }, [remoteSocketId, socket]);
+  }, [remoteSocketId, socket, peer]);
 
   useEffect(() => {
     peer.current.peer.addEventListener("negotiationneeded", handleNegoNeeded);
@@ -149,19 +162,22 @@ const ChatMessagesScreen = () => {
         handleNegoNeeded
       );
     };
-  }, [handleNegoNeeded]);
+  }, [handleNegoNeeded, peer]);
 
   const handleNegoNeedIncomming = useCallback(
     async ({ from, offer }) => {
       const ans = await peer.current.getAnswer(offer);
       socket.emit("peer:nego:done", { to: from, ans });
     },
-    [socket]
+    [socket, peer]
   );
 
-  const handleNegoNeedFinal = useCallback(async ({ ans }) => {
-    await peer.current.setLocalDescription(ans);
-  }, []);
+  const handleNegoNeedFinal = useCallback(
+    async ({ ans }) => {
+      await peer.current.setLocalDescription(ans);
+    },
+    [peer]
+  );
 
   useEffect(() => {
     peer.current.peer.addEventListener("track", async (ev) => {
@@ -169,7 +185,7 @@ const ChatMessagesScreen = () => {
       console.log("GOT TRACKS!!");
       setRemoteStream(remoteStream[0]);
     });
-  }, []);
+  }, [peer]);
 
   useEffect(() => {
     socket.on("user:joined", handleUserJoined);
@@ -186,7 +202,7 @@ const ChatMessagesScreen = () => {
       socket.off("user:admit", handleUserAdmit);
       socket.off("incomming:call", handleIncommingCall);
       socket.off("call:accepted", handleCallAccepted);
-      socket.on("sendStream", handleStream);
+      socket.off("sendStream", handleStream);
       socket.off("peer:nego:needed", handleNegoNeedIncomming);
       socket.off("peer:nego:final", handleNegoNeedFinal);
       socket.off("call:end", handleCallEnd);
@@ -303,9 +319,8 @@ const ChatMessagesScreen = () => {
         const newMessage = await response.json(); // Parse the response as JSON
         setMessage("");
         setSelectedImage("");
-
         // Emit the new message to the server
-        socket.emit("newMessage", JSON.stringify(newMessage));
+        socket.emit("newMessage", newMessage);
       }
     } catch (error) {
       console.log("error in sending the message", error);
@@ -317,6 +332,14 @@ const ChatMessagesScreen = () => {
       try {
         // Clear the token from AsyncStorage
         await AsyncStorage.removeItem("authToken");
+
+        await fetch(apiUrl + "/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId, expoPushToken }),
+        });
         // Navigate back to the Login screen
         navigation.replace("Login");
       } catch (error) {
@@ -366,10 +389,14 @@ const ChatMessagesScreen = () => {
                   socket.emit("call:end", { to: remoteSocketId });
                   handleCallEnd();
                 } else {
-                  socket.emit("call:notify", { recepientId, userId });
-                  handleCallUser();
+                  if (remoteSocketId) {
+                    handleCallUser();
+                  } else {
+                    socket.emit("call:notify", { recepientId, userId });
+                    setIsCallNotificationSent(true);
+                  }
                 }
-                return remoteSocketId ? !prev : prev;
+                return !prev;
               });
             }}
           >
@@ -651,8 +678,18 @@ const ChatMessagesScreen = () => {
         </View>
       </View> */}
       {/* </Modal> */}
-      {localStream && <RTCView streamURL={localStream.toURL()} />}
-      {remoteStream && <RTCView streamURL={remoteStream.toURL()} />}
+      {localStream && (
+        <RTCView
+          // style={{ height: 50, width: 50 }}
+          streamURL={localStream.toURL()}
+        />
+      )}
+      {remoteStream && (
+        <RTCView
+          // style={{ height: 50, width: 50 }}
+          streamURL={remoteStream.toURL()}
+        />
+      )}
       <ScrollView
         ref={scrollViewRef}
         style={{ height: "100%" }}

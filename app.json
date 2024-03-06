@@ -30,9 +30,13 @@
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts."
         }
       ],
-      ["@config-plugins/react-native-webrtc"]
+      [
+        "@config-plugins/react-native-webrtc"
+      ]
     ],
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {

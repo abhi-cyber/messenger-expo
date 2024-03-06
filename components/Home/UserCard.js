@@ -4,7 +4,6 @@ import userIcon from "../../assets/user.png";
 import { useNavigation } from "@react-navigation/native";
 import { useState, useEffect } from "react";
 import { apiUrl } from "../../constants/consts";
-import { io } from "socket.io-client";
 import { useUserId } from "../../UserContext";
 
 export default ({
@@ -13,7 +12,6 @@ export default ({
   displayDeleteButton,
   setDisplayDeleteButton,
   deleteUser,
-  handleSelectedForwardUser,
 }) => {
   const { userId, socket } = useUserId();
   const navigation = useNavigation();

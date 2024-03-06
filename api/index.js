@@ -46,18 +46,9 @@ io.on("connection", (socket) => {
 
   // webrtc
   socket.on("room:join", ({ userId, room }) => {
-    // userIdToSocketIdMap.set(userId, socket.id);
-    // socketIdToUserIdMap.set(socket.id, userId);
-    // socket.leave(socket.room);
-    // const numClients = io.sockets.adapter.rooms[room]?.length || 0;
-    // if (numClients < 2) {
-    console.log("joined");
     io.to(room).emit("user:joined", { id: socket.id });
+    console.log(socket.id);
     socket.join(room);
-    // socket.leave(room);
-    // return;
-    // }
-    // io.to(socket.id).emit("room:join", data);
   });
 
   socket.on("room:join:admit", ({ id }) => {
@@ -70,14 +61,13 @@ io.on("connection", (socket) => {
 
   socket.on("call:notify", async ({ recepientId, userId }) => {
     const user = await User.findById(recepientId).populate("expoPushTokens");
-    const expoPushTokens = user.expoPushTokens;
-
-    for (let pushToken of expoPushTokens) {
+    for (let pushToken of user.expoPushTokens) {
       await expo.sendPushNotificationsAsync([
         {
           to: pushToken,
           sound: "default",
           title: "incoming call...",
+          body: `${user.email} is calling`,
           data: { recepientId: userId, isCallNotification: true },
         },
       ]);
@@ -105,15 +95,8 @@ io.on("connection", (socket) => {
   });
   // webrtc
 
-  socket.on("newMessage", (response) => {
-    try {
-      const message = JSON.parse(response);
-      console.log("Received new message:", message);
-      // Emit the new message to all connected clients
-      io.emit("newMessage", message);
-    } catch (error) {
-      console.error("Error parsing new message:", error);
-    }
+  socket.on("newMessage", (message) => {
+    io.emit("newMessage", message);
   });
 
   socket.on("disconnect", () => {

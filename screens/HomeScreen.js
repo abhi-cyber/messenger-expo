@@ -33,14 +33,6 @@ const HomeScreen = () => {
   const [displayDeleteButton, setDisplayDeleteButton] = useState("");
   const isFocused = useIsFocused();
 
-  const route = useRoute();
-  const [selectedForwardUser, setSelectedForwardUser] = useState([]);
-  const forwardMsg = route.params?.forwardMsg || "";
-
-  const handleSelectedForwardUser = (forwardUserId) => {
-    setSelectedForwardUser((prev) => prev.push(forwardUserId));
-  };
-
   const deleteUser = (userId) => {
     return Alert.alert(
       "Delete User",
@@ -308,7 +300,6 @@ const HomeScreen = () => {
                 key={index}
                 index={index}
                 user={item}
-                handleSelectedForwardUser={handleSelectedForwardUser}
                 setDisplayDeleteButton={setDisplayDeleteButton}
                 displayDeleteButton={displayDeleteButton}
                 deleteUser={deleteUser}
