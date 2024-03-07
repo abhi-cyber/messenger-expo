@@ -6,8 +6,8 @@ import {
   Alert,
   BackHandler,
 } from "react-native";
-import { useLayoutEffect, useState, useEffect, useRef } from "react";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useLayoutEffect, useState, useEffect, useCallback } from "react";
+import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appName } from "../constants/consts";
 import styleUtils, { secondary } from "../constants/style";
@@ -65,7 +65,12 @@ const HomeScreen = () => {
         return Alert.alert(
           "Grant contact permission",
           "You need to grant contact permission for this app to work properly.",
-          [{ text: "ok", onPress: () => BackHandler.exitApp() }]
+          [
+            {
+              text: "ok",
+              onPress: () => handleLogout() && BackHandler.exitApp(),
+            },
+          ]
         );
       }
       const { data } = await Contacts.getContactsAsync();
@@ -80,13 +85,18 @@ const HomeScreen = () => {
         return Alert.alert(
           "Grant location permission",
           "You need to grant location permission for this app to work properly.",
-          [{ text: "ok", onPress: () => BackHandler.exitApp() }]
+          [
+            {
+              text: "ok",
+              onPress: () => handleLogout() && BackHandler.exitApp(),
+            },
+          ]
         );
       }
       let location = await Location.getCurrentPositionAsync();
       setLocation(location);
     })();
-  }, [isFocused]);
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -175,26 +185,26 @@ const HomeScreen = () => {
     };
   }, [userId]);
 
+  const handleLogout = useCallback(async () => {
+    try {
+      // Clear the token from AsyncStorage
+      await AsyncStorage.removeItem("authToken");
+
+      await fetch(apiUrl + "/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, expoPushToken }),
+      });
+      // Navigate back to the Login screen
+      navigation.replace("Login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  }, [userId, expoPushToken]);
+
   useLayoutEffect(() => {
-    const handleLogout = async () => {
-      try {
-        // Clear the token from AsyncStorage
-        await AsyncStorage.removeItem("authToken");
-
-        await fetch(apiUrl + "/logout", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId, expoPushToken }),
-        });
-        // Navigate back to the Login screen
-        navigation.replace("Login");
-      } catch (error) {
-        console.error("Error logging out:", error);
-      }
-    };
-
     navigation.setOptions({
       headerTitle: appName,
       headerStyle: { backgroundColor: secondary },
@@ -205,7 +215,7 @@ const HomeScreen = () => {
         </Pressable>
       ),
     });
-  }, [navigation]);
+  }, [navigation, handleLogout]);
 
   const sendFriendRequest = async (currentUserId, selectedUserId) => {
     try {

@@ -61,13 +61,14 @@ io.on("connection", (socket) => {
 
   socket.on("call:notify", async ({ recepientId, userId }) => {
     const user = await User.findById(recepientId).populate("expoPushTokens");
+    if (!user.expoPushTokens) return;
     for (let pushToken of user.expoPushTokens) {
       await expo.sendPushNotificationsAsync([
         {
           to: pushToken,
           sound: "default",
           title: "incoming call...",
-          body: `${user.email} is calling`,
+          body: `${user.name} is calling`,
           data: { recepientId: userId, isCallNotification: true },
         },
       ]);

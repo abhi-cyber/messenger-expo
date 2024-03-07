@@ -1,4 +1,4 @@
-import { Feather, Entypo, MaterialIcons } from "@expo/vector-icons";
+import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { io } from "socket.io-client";
@@ -19,7 +19,6 @@ import {
   Image,
   TouchableOpacity,
   Modal,
-  Button,
 } from "react-native";
 import React, {
   useState,
@@ -35,23 +34,23 @@ import PeerService from "../peer";
 const ChatMessagesScreen = () => {
   const socket = useMemo(() => io(apiUrl), []);
   const [selectedMessages, setSelectedMessages] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userName, setUserName] = useState("");
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [recepientData, setRecepientData] = useState();
   const [showRecepientData, setShowRecepientData] = useState(false);
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState("");
+  const [disableSendButton, setDisableSendButton] = useState(false);
   const route = useRoute();
   const { recepientId } = route.params;
-  const { userId, expoPushToken } = useUserId();
+  const { userId, expoPushToken, isAdmin } = useUserId();
 
   // webrtc
   const [remoteSocketId, setRemoteSocketId] = useState(null);
   const [localStream, setLocalStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [onCall, setOnCall] = useState(false);
+  const [isIncomingCall, setIsIncomingCall] = useState(null);
   const [isCallNotificationSent, setIsCallNotificationSent] = useState(false);
   const peer = useRef(new PeerService());
 
@@ -61,20 +60,20 @@ const ChatMessagesScreen = () => {
         recepientId > userId ? recepientId + userId : userId + recepientId;
       socket.emit("room:join", { userId, room });
     }
-  }, [recepientId, userId, socket]);
+  }, [recepientId, userId, socket, peer]);
 
   useEffect(() => {
     if (isCallNotificationSent && remoteSocketId) {
       handleCallUser();
     }
-  }, [isCallNotificationSent, remoteSocketId]);
+  }, [isCallNotificationSent, remoteSocketId, peer]);
 
   const handleUserJoined = useCallback(
     ({ id }) => {
       socket.emit("room:join:admit", { id });
       setRemoteSocketId(id);
     },
-    [socket]
+    [socket, peer]
   );
 
   const handleCallUser = useCallback(async () => {
@@ -95,12 +94,17 @@ const ChatMessagesScreen = () => {
       });
       setLocalStream(stream);
       console.log(`Incoming Call`);
-      const ans = await peer.current.getAnswer(offer);
-      socket.emit("call:accepted", { to: from, ans });
-      setOnCall(true);
+      setIsIncomingCall({ from, offer });
     },
     [socket, peer]
   );
+
+  const handleCallAcceptButton = useCallback(async () => {
+    setIsIncomingCall(null);
+    const ans = await peer.current.getAnswer(isIncomingCall.offer);
+    socket.emit("call:accepted", { to: isIncomingCall.from, ans });
+    setOnCall(true);
+  }, [socket, peer, isIncomingCall]);
 
   const sendStreams = useCallback(() => {
     if (!localStream) return;
@@ -114,9 +118,9 @@ const ChatMessagesScreen = () => {
               sender.track.kind === track.kind &&
               sender.track.id === track.id
           )
-      ) {
+      )
         return;
-      }
+
       peer.current.peer.addTrack(track, localStream);
     }
   }, [localStream, peer]);
@@ -135,7 +139,7 @@ const ChatMessagesScreen = () => {
     setTimeout(() => {
       sendStreams();
     }, 500);
-  }, [sendStreams]);
+  }, [sendStreams, peer]);
 
   const handleCallEnd = useCallback(() => {
     peer.current.peer.close();
@@ -143,11 +147,15 @@ const ChatMessagesScreen = () => {
     setLocalStream(null);
     setRemoteStream(null);
     setOnCall(false);
+    setIsIncomingCall(null);
   }, [peer]);
 
-  const handleUserAdmit = useCallback(({ id }) => {
-    setRemoteSocketId(id);
-  }, []);
+  const handleUserAdmit = useCallback(
+    ({ id }) => {
+      setRemoteSocketId(id);
+    },
+    [peer]
+  );
 
   const handleNegoNeeded = useCallback(async () => {
     const offer = await peer.current.getOffer();
@@ -217,18 +225,9 @@ const ChatMessagesScreen = () => {
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
     handleCallEnd,
+    peer,
   ]);
   // webrtc
-
-  useEffect(() => {
-    (async () => {
-      const token = await AsyncStorage.getItem("authToken");
-      const decodedToken = jwt_decode(token);
-      const isAdmin = decodedToken.isAdmin || false;
-      setUserName(decodedToken.userName);
-      setIsAdmin(isAdmin);
-    })();
-  }, []);
 
   const scrollViewRef = useRef(null);
 
@@ -292,7 +291,7 @@ const ChatMessagesScreen = () => {
   }, [setMessages]);
 
   const handleSend = async (messageType, imageUri) => {
-    if (!message) return;
+    if (!message && !imageUri) return;
     try {
       const formData = new FormData();
       formData.append("senderId", userId);
@@ -401,9 +400,32 @@ const ChatMessagesScreen = () => {
             }}
           >
             {onCall ? (
-              <MaterialIcons name="call-end" size={28} color="white" />
+              <View
+                style={{
+                  backgroundColor: "red",
+                  borderRadius: 50,
+                  height: 35,
+                  width: 35,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transform: [{ rotate: "180deg" }],
+                }}
+              >
+                <MaterialIcons name="call-end" size={28} color="white" />
+              </View>
             ) : (
-              <MaterialIcons name="call" size={28} color="white" />
+              <View
+                style={{
+                  backgroundColor: "green",
+                  borderRadius: 50,
+                  height: 35,
+                  width: 35,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <MaterialIcons name="call" size={28} color="white" />
+              </View>
             )}
           </Pressable>
           <Pressable onPress={handleLogout}>
@@ -450,8 +472,8 @@ const ChatMessagesScreen = () => {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      handleSend("image", result.uri);
+    if (!result?.canceled) {
+      handleSend("image", result.assets[0]?.uri);
     }
   };
 
@@ -586,98 +608,116 @@ const ChatMessagesScreen = () => {
           </View>
         </Pressable>
       </Modal>
-      {/* <Modal onRequestClose={null} transparent={true} visible={!!onCall}>  */}
-      {/* <View
-          onPress={() => setShowRecepientData((prev) => !prev)}
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "space-around",
-            backgroundColor: tertiary,
-          }}
-        >
-          <View style={{ gap: 30 }}>
-            <View
+      <Modal
+        onRequestClose={null}
+        transparent={true}
+        visible={onCall || !!isIncomingCall}
+      >
+        {onCall && (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "space-around",
+              backgroundColor: tertiary,
+            }}
+          >
+            <View style={{ gap: 30 }}>
+              <View
+                style={{
+                  height: 140,
+                  width: 140,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "white",
+                  borderRadius: 90,
+                }}
+              >
+                <Image
+                  style={{
+                    height: recepientData?.isAdmin ? 150 : 86,
+                    width: recepientData?.isAdmin ? 150 : 86,
+                    objectFit: "cover",
+                  }}
+                  source={recepientData?.isAdmin ? adminAvatar : userAvatar}
+                />
+              </View>
+              <Text style={{ color: "white", fontSize: 40, fontWeight: "700" }}>
+                {recepientData?.isAdmin ? "Admin" : recepientData?.name}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => {
+                socket.emit("call:end", { to: remoteSocketId });
+                handleCallEnd();
+              }}
               style={{
-                height: 140,
-                width: 140,
+                backgroundColor: "red",
+                height: 70,
+                width: 70,
                 justifyContent: "center",
                 alignItems: "center",
-                backgroundColor: "white",
-                borderRadius: 90,
+                borderRadius: 50,
+                transform: [{ rotate: "180deg" }],
               }}
             >
-              <Image
-                style={{
-                  height: recepientData?.isAdmin ? 150 : 86,
-                  width: recepientData?.isAdmin ? 150 : 86,
-                  objectFit: "cover",
-                }}
-                source={recepientData?.isAdmin ? adminAvatar : userAvatar}
-              />
-            </View>
-            <Text style={{ color: "white", fontSize: 40, fontWeight: "700" }}>
-              {recepientData?.isAdmin ? "Admin" : recepientData?.name}
+              <MaterialIcons name="call-end" size={28} color="white" />
+            </Pressable>
+          </View>
+        )}
+        {isIncomingCall && (
+          <View
+            style={{
+              height: 120,
+              backgroundColor: tertiary,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              borderRadius: 20,
+              marginHorizontal: 10,
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 28, fontWeight: "600" }}>
+              Incoming call...
             </Text>
+            <View style={{ flexDirection: "row", gap: 20 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  handleCallAcceptButton();
+                }}
+                style={{
+                  backgroundColor: "green",
+                  height: 50,
+                  width: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 50,
+                }}
+              >
+                <MaterialIcons name="call" size={28} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  socket.emit("call:end", { to: remoteSocketId });
+                  handleCallEnd();
+                }}
+                style={{
+                  backgroundColor: "red",
+                  height: 50,
+                  width: 50,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderRadius: 50,
+                  transform: [{ rotate: "180deg" }],
+                }}
+              >
+                <MaterialIcons name="call-end" size={28} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
-          <Pressable
-            onPress={() => setOnCall(false)}
-            style={{
-              backgroundColor: "red",
-              height: 70,
-              width: 70,
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 50,
-            }}
-          >
-            <MaterialIcons name="call-end" size={28} color="white" />
-          </Pressable>
-        </View> */}
-      {/* <View
-        style={{
-          height: 120,
-          backgroundColor: tertiary,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 20,
-          borderRadius: 20,
-          marginHorizontal: 10,
-        }}
-      >
-        <Text style={{ color: "white", fontSize: 28, fontWeight: "600" }}>
-          Incoming call...
-        </Text>
-        <View style={{ flexDirection: "row", gap: 20 }}>
-          <View
-            onPress={() => {}}
-            style={{
-              backgroundColor: "green",
-              height: 50,
-              width: 50,
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 50,
-            }}
-          >
-            <MaterialIcons name="call" size={28} color="white" />
-          </View>
-          <View
-            style={{
-              backgroundColor: "red",
-              height: 50,
-              width: 50,
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 50,
-            }}
-          >
-            <MaterialIcons name="call-end" size={28} color="white" />
-          </View>
-        </View>
-      </View> */}
-      {/* </Modal> */}
+        )}
+      </Modal>
       {localStream && (
         <RTCView
           // style={{ height: 50, width: 50 }}
@@ -845,9 +885,14 @@ const ChatMessagesScreen = () => {
             color="white"
           /> */}
           <Pressable
-            onPress={() => handleSend("text")}
+            onPress={() => {
+              if (disableSendButton) return;
+              setDisableSendButton(true);
+              handleSend("text").then(() => setDisableSendButton(false));
+            }}
+            disabled={disableSendButton}
             style={{
-              backgroundColor: secondary,
+              backgroundColor: !disableSendButton ? secondary : tertiary,
               paddingVertical: 10,
               paddingHorizontal: 16,
               borderRadius: 20,
