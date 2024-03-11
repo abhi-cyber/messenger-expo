@@ -9,6 +9,7 @@ import FriendsScreen from "./screens/FriendsScreen";
 import ChatsScreen from "./screens/ChatsScreen";
 import ChatMessagesScreen from "./screens/ChatMessagesScreen";
 import ForwardMessageScreen from "./screens/ForwardMessageScreen";
+import BroadcastScreen from "./screens/BroadcastScreen";
 
 const StackNavigator = () => {
   const Stack = createNativeStackNavigator();
@@ -34,6 +35,8 @@ const StackNavigator = () => {
         <Stack.Screen name="Messages" component={ChatMessagesScreen} />
 
         <Stack.Screen name="ForwardMessage" component={ForwardMessageScreen} />
+
+        <Stack.Screen name="Broadcast" component={BroadcastScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

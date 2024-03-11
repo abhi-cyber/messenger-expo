@@ -64,6 +64,13 @@ const HomeScreen = () => {
             size={24}
             color="black"
           />
+          {isAdmin && (
+            <Pressable onPress={() => navigation.navigate("Broadcast")}>
+              <Text style={{marginLeft: 10, color: "black", fontSize: 16}}>
+                Broadcast
+              </Text>
+            </Pressable>
+          )}
           <Pressable onPress={handleLogout}>
             <Text style={{marginLeft: 10, color: "black", fontSize: 16}}>
               Logout
