@@ -1169,6 +1169,11 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
+"@config-plugins/react-native-callkeep@6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@config-plugins/react-native-callkeep/-/react-native-callkeep-6.0.0.tgz#11dc21890934fa4e73804b2e9a62732cf1cd476c"
+  integrity sha512-enUzI7ngEpvXGKlyiRB1bGv5CCv9IWQqPqTogUEqn4wwTcud88UWJGy+zOYQQOFw6ABbsdI9iBa6aSMbEsnCvQ==
+
 "@config-plugins/react-native-webrtc@7.0.0":
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/@config-plugins/react-native-webrtc/-/react-native-webrtc-7.0.0.tgz#0bed21e0355e35ff6e86d1c2a0a660874bc0377c"
@@ -5850,6 +5855,11 @@ react-is@^17.0.1:
   version "17.0.2"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
+
+react-native-callkeep@4.3.9:
+  version "4.3.9"
+  resolved "https://registry.yarnpkg.com/react-native-callkeep/-/react-native-callkeep-4.3.9.tgz#f0250846b55b00c6d2be07525fc61f8fa28c540d"
+  integrity sha512-yTYrf8yifvozSrCNDfTBf3cAm2SIRiRoIsVh6HzAN0vrhXvG8EsaGmkCw867zZwCxUAQPFjM26sy+tkpNA4gUA==
 
 react-native-emoji-selector@^0.2.0:
   version "0.2.0"

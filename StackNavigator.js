@@ -12,6 +12,7 @@ import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef } from "react";
+import RNCallKeep from "react-native-callkeep";
 
 const StackNavigator = () => {
   return (
@@ -44,6 +45,28 @@ const Navigator = () => {
       Notifications.removeNotificationSubscription(responseListener.current);
     };
   }, []);
+
+  // useEffect(() => {
+  //   RNCallKeep.addEventListener("answerCall", null);
+  //   RNCallKeep.addEventListener("endCall", null);
+
+  //   RNCallKeep.startCall("hello sir", null, "hello sir");
+
+  //   RNCallKeep.displayIncomingCall(
+  //     "hello sir",
+  //     "hello sir",
+  //     "hello sir",
+  //     "number",
+  //     true,
+  //     null
+  //   );
+  //   RNCallKeep.backToForeground();
+
+  //   return () => {
+  //     RNCallKeep.removeEventListener("answerCall", null);
+  //     RNCallKeep.removeEventListener("endCall", null);
+  //   };
+  // }, []);
 
   return (
     <Stack.Navigator>

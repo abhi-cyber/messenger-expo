@@ -13,6 +13,12 @@ class PeerService {
           },
         ],
       });
+
+      // this.peer.ontrack = (e) => {
+      //   const remoteStream = e.streams[0];
+      //   console.log("GOT TRACKS!!");
+      //   setRemoteStream(remoteStream);
+      // };
     }
   }
 

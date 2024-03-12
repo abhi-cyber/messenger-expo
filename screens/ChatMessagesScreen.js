@@ -8,7 +8,6 @@ import adminAvatar from "../assets/admin.png";
 import userAvatar from "../assets/user.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styleUtils, { accent, secondary, tertiary } from "../constants/style";
-import jwt_decode from "jwt-decode";
 import {
   Text,
   View,
@@ -60,43 +59,56 @@ const ChatMessagesScreen = () => {
         recepientId > userId ? recepientId + userId : userId + recepientId;
       socket.emit("room:join", { userId, room });
     }
-  }, [recepientId, userId, socket, peer]);
+  }, [recepientId, userId, socket]);
 
   useEffect(() => {
     if (isCallNotificationSent && remoteSocketId) {
       handleCallUser();
     }
-  }, [isCallNotificationSent, remoteSocketId, peer]);
+  }, [isCallNotificationSent, remoteSocketId]);
 
   const handleUserJoined = useCallback(
     ({ id }) => {
       socket.emit("room:join:admit", { id });
       setRemoteSocketId(id);
     },
-    [socket, peer]
+    [socket]
   );
+
+  useEffect(() => {
+    peer.current.peer.ontrack = (e) => {
+      const remoteStream = e.streams[0];
+      console.log("GOT TRACKS!!");
+      setRemoteStream(remoteStream);
+    };
+  }, []);
 
   const handleCallUser = useCallback(async () => {
     const stream = await mediaDevices.getUserMedia({
       audio: true,
-      video: false,
+      video: true,
     });
     const offer = await peer.current.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
     setLocalStream(stream);
-  }, [remoteSocketId, socket, peer]);
+  }, [remoteSocketId, socket]);
 
   const handleIncommingCall = useCallback(
     async ({ from, offer }) => {
       const stream = await mediaDevices.getUserMedia({
         audio: true,
-        video: false,
+        video: true,
       });
       setLocalStream(stream);
       console.log(`Incoming Call`);
       setIsIncomingCall({ from, offer });
+      // test
+      setIsIncomingCall(null);
+      const ans = await peer.current.getAnswer(offer);
+      socket.emit("call:accepted", { to: from, ans });
+      setOnCall(true);
     },
-    [socket, peer]
+    [socket]
   );
 
   const handleCallAcceptButton = useCallback(async () => {
@@ -104,25 +116,13 @@ const ChatMessagesScreen = () => {
     const ans = await peer.current.getAnswer(isIncomingCall.offer);
     socket.emit("call:accepted", { to: isIncomingCall.from, ans });
     setOnCall(true);
-  }, [socket, peer, isIncomingCall]);
+  }, [socket, isIncomingCall]);
 
   const sendStreams = useCallback(() => {
     if (!localStream) return;
-    for (const track of localStream.getTracks()) {
-      if (
-        peer.current.peer
-          .getSenders()
-          .find(
-            (sender) =>
-              sender.track &&
-              sender.track.kind === track.kind &&
-              sender.track.id === track.id
-          )
-      )
-        return;
-
+    localStream.getTracks().forEach((track) => {
       peer.current.peer.addTrack(track, localStream);
-    }
+    });
   }, [localStream, peer]);
 
   const handleCallAccepted = useCallback(
@@ -132,35 +132,35 @@ const ChatMessagesScreen = () => {
       sendStreams();
       socket.emit("sendStream", { to: from });
     },
-    [sendStreams, peer]
+    [sendStreams, socket]
   );
 
   const handleStream = useCallback(() => {
     setTimeout(() => {
       sendStreams();
     }, 500);
-  }, [sendStreams, peer]);
+  }, [sendStreams]);
 
   const handleCallEnd = useCallback(() => {
+    if (!localStream) return;
     peer.current.peer.close();
+    localStream.getTracks().forEach((track) => track.stop());
+    localStream.release();
     peer.current = new PeerService();
     setLocalStream(null);
     setRemoteStream(null);
     setOnCall(false);
     setIsIncomingCall(null);
-  }, [peer]);
+  }, [localStream]);
 
-  const handleUserAdmit = useCallback(
-    ({ id }) => {
-      setRemoteSocketId(id);
-    },
-    [peer]
-  );
+  const handleUserAdmit = useCallback(({ id }) => {
+    setRemoteSocketId(id);
+  }, []);
 
   const handleNegoNeeded = useCallback(async () => {
     const offer = await peer.current.getOffer();
     socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
-  }, [remoteSocketId, socket, peer]);
+  }, [remoteSocketId, socket]);
 
   useEffect(() => {
     peer.current.peer.addEventListener("negotiationneeded", handleNegoNeeded);
@@ -170,30 +170,19 @@ const ChatMessagesScreen = () => {
         handleNegoNeeded
       );
     };
-  }, [handleNegoNeeded, peer]);
+  }, [handleNegoNeeded]);
 
   const handleNegoNeedIncomming = useCallback(
     async ({ from, offer }) => {
       const ans = await peer.current.getAnswer(offer);
       socket.emit("peer:nego:done", { to: from, ans });
     },
-    [socket, peer]
+    [socket]
   );
 
-  const handleNegoNeedFinal = useCallback(
-    async ({ ans }) => {
-      await peer.current.setLocalDescription(ans);
-    },
-    [peer]
-  );
-
-  useEffect(() => {
-    peer.current.peer.addEventListener("track", async (ev) => {
-      const remoteStream = ev.streams;
-      console.log("GOT TRACKS!!");
-      setRemoteStream(remoteStream[0]);
-    });
-  }, [peer]);
+  const handleNegoNeedFinal = useCallback(async ({ ans }) => {
+    await peer.current.setLocalDescription(ans);
+  }, []);
 
   useEffect(() => {
     socket.on("user:joined", handleUserJoined);
@@ -225,7 +214,6 @@ const ChatMessagesScreen = () => {
     handleNegoNeedIncomming,
     handleNegoNeedFinal,
     handleCallEnd,
-    peer,
   ]);
   // webrtc
 
@@ -408,7 +396,6 @@ const ChatMessagesScreen = () => {
                   width: 35,
                   justifyContent: "center",
                   alignItems: "center",
-                  transform: [{ rotate: "180deg" }],
                 }}
               >
                 <MaterialIcons name="call-end" size={28} color="white" />
@@ -608,7 +595,7 @@ const ChatMessagesScreen = () => {
           </View>
         </Pressable>
       </Modal>
-      <Modal
+      {/* <Modal
         onRequestClose={null}
         transparent={true}
         visible={onCall || !!isIncomingCall}
@@ -658,7 +645,6 @@ const ChatMessagesScreen = () => {
                 justifyContent: "center",
                 alignItems: "center",
                 borderRadius: 50,
-                transform: [{ rotate: "180deg" }],
               }}
             >
               <MaterialIcons name="call-end" size={28} color="white" />
@@ -709,7 +695,6 @@ const ChatMessagesScreen = () => {
                   justifyContent: "center",
                   alignItems: "center",
                   borderRadius: 50,
-                  transform: [{ rotate: "180deg" }],
                 }}
               >
                 <MaterialIcons name="call-end" size={28} color="white" />
@@ -717,16 +702,16 @@ const ChatMessagesScreen = () => {
             </View>
           </View>
         )}
-      </Modal>
+      </Modal> */}
       {localStream && (
         <RTCView
-          // style={{ height: 50, width: 50 }}
+          style={{ height: 50, width: 50 }}
           streamURL={localStream.toURL()}
         />
       )}
       {remoteStream && (
         <RTCView
-          // style={{ height: 50, width: 50 }}
+          style={{ height: 50, width: 50 }}
           streamURL={remoteStream.toURL()}
         />
       )}

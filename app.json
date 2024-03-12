@@ -32,6 +32,9 @@
       ],
       [
         "@config-plugins/react-native-webrtc"
+      ],
+      [
+        "@config-plugins/react-native-callkeep"
       ]
     ],
     "assetBundlePatterns": [
@@ -62,7 +65,10 @@
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.WAKE_LOCK"
+        "android.permission.WAKE_LOCK",
+        "android.permission.BIND_TELECOM_CONNECTION_SERVICE",
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.CALL_PHONE"
       ],
       "package": "com.sudokamal.messengerproject",
       "googleServicesFile": "./google-services.json"
@@ -72,7 +78,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "79ae3751-4dbb-4e75-be9b-9fa787a6d32e"
+        "projectId": "1ebf7fe3-8f60-4147-b763-7c2955c46e13"
       }
     }
   }
