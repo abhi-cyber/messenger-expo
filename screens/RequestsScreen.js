@@ -155,6 +155,25 @@ const RequestsScreen = () => {
         >
           Requests
         </Text>
+        <Pressable
+          onPress={() => {
+            navigation.navigate("Broadcast");
+          }}
+        >
+          <Text
+            style={{
+              color: "white",
+              fontSize: 20,
+              fontWeight: "500",
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderBottomWidth: 2,
+              borderColor: secondary,
+            }}
+          >
+            Broadcast
+          </Text>
+        </Pressable>
       </View>
       {friendRequests.length == 0 && (
         <Text

@@ -289,6 +289,25 @@ const HomeScreen = () => {
               Requests
             </Text>
           </Pressable>
+          <Pressable
+            onPress={() => {
+              navigation.navigate("Broadcast");
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 20,
+                fontWeight: "500",
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderBottomWidth: 2,
+                borderColor: secondary,
+              }}
+            >
+              Broadcast
+            </Text>
+          </Pressable>
         </View>
         {users.length <= 0 ? (
           <Text

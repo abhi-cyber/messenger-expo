@@ -3,6 +3,7 @@ import HomeScreen from "./HomeScreen";
 import LoginScreen from "./LoginScreen";
 import RegisterScreen from "./RegisterScreen";
 import RequestsScreen from "./RequestsScreen";
+import BroadcastScreen from "./BroadcastScreen";
 
 export {
   ChatMessagesScreen,
@@ -10,4 +11,5 @@ export {
   LoginScreen,
   RegisterScreen,
   RequestsScreen,
+  BroadcastScreen,
 };

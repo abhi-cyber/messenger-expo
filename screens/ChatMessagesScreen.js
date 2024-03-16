@@ -51,7 +51,20 @@ const ChatMessagesScreen = () => {
   const [onCall, setOnCall] = useState(false);
   const [isIncomingCall, setIsIncomingCall] = useState(null);
   const [isCallNotificationSent, setIsCallNotificationSent] = useState(false);
+  const [callAccepted, setCallAccepted] = useState(false);
+  const [totalSecInCall, setTotalSecInCall] = useState(0);
   const peer = useRef(new PeerService());
+
+  useEffect(() => {
+    const setSecInCall = () => {
+      setTotalSecInCall((prev) => prev + 1);
+      setTimeout(setSecInCall, 1000);
+    };
+    if (callAccepted) {
+      setSecInCall();
+    }
+    return () => setTotalSecInCall(0);
+  }, [callAccepted]);
 
   useEffect(() => {
     if (recepientId && userId) {
@@ -104,6 +117,7 @@ const ChatMessagesScreen = () => {
       setIsIncomingCall({ from, offer });
       // test
       setIsIncomingCall(null);
+      setCallAccepted(true);
       const ans = await peer.current.getAnswer(offer);
       socket.emit("call:accepted", { to: from, ans });
       setOnCall(true);
@@ -113,6 +127,7 @@ const ChatMessagesScreen = () => {
 
   const handleCallAcceptButton = useCallback(async () => {
     setIsIncomingCall(null);
+    setCallAccepted(true);
     const ans = await peer.current.getAnswer(isIncomingCall.offer);
     socket.emit("call:accepted", { to: isIncomingCall.from, ans });
     setOnCall(true);
@@ -128,6 +143,7 @@ const ChatMessagesScreen = () => {
   const handleCallAccepted = useCallback(
     ({ from, ans }) => {
       peer.current.setLocalDescription(ans);
+      setCallAccepted(true);
       console.log("Call Accepted!");
       sendStreams();
       socket.emit("sendStream", { to: from });
@@ -279,7 +295,7 @@ const ChatMessagesScreen = () => {
   }, [setMessages]);
 
   const handleSend = async (messageType, imageUri) => {
-    if (!message && !imageUri) return;
+    if (!messageType && !message && !imageUri) return;
     try {
       const formData = new FormData();
       formData.append("senderId", userId);
@@ -292,9 +308,15 @@ const ChatMessagesScreen = () => {
           name: "image.jpg",
           type: "image/jpeg",
         });
-      } else {
+      }
+      if (messageType == "text") {
         formData.append("messageType", "text");
         formData.append("messageText", message);
+      }
+
+      if (messageType == "call") {
+        formData.append("messageType", "call");
+        formData.append("messageText", totalSecInCall);
       }
 
       const response = await fetch(apiUrl + "/messages", {
@@ -374,6 +396,7 @@ const ChatMessagesScreen = () => {
               setOnCall((prev) => {
                 if (prev) {
                   socket.emit("call:end", { to: remoteSocketId });
+                  handleSend("call");
                   handleCallEnd();
                 } else {
                   if (remoteSocketId) {
@@ -756,6 +779,64 @@ const ChatMessagesScreen = () => {
                   }}
                 >
                   {item?.message}
+                </Text>
+                <Text
+                  style={{
+                    textAlign: "right",
+                    fontSize: 9,
+                    color: "gray",
+                    marginTop: 5,
+                  }}
+                >
+                  {formatTime(item.timeStamp)}
+                </Text>
+              </Pressable>
+            );
+          }
+          if (item.messageType == "call") {
+            const isSelected = selectedMessages.includes(item._id);
+            return (
+              <Pressable
+                onLongPress={() => (isAdmin ? handleSelectMessage(item) : null)}
+                key={index}
+                style={[
+                  item?.senderId?._id == userId || item?.senderId == userId
+                    ? {
+                        alignSelf: "flex-end",
+                        backgroundColor: "#DCF8C6",
+                        padding: 8,
+                        maxWidth: "60%",
+                        borderRadius: 7,
+                        margin: 10,
+                      }
+                    : {
+                        alignSelf: "flex-start",
+                        backgroundColor: "white",
+                        padding: 8,
+                        margin: 10,
+                        borderRadius: 7,
+                        maxWidth: "60%",
+                      },
+
+                  isSelected && { width: "100%", backgroundColor: "#F0FFFF" },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    textAlign: isSelected ? "right" : "left",
+                    fontWeight: "700",
+                  }}
+                >
+                  Voice call
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    textAlign: isSelected ? "right" : "left",
+                  }}
+                >
+                  {item?.message} s
                 </Text>
                 <Text
                   style={{

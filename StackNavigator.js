@@ -7,6 +7,7 @@ import {
   LoginScreen,
   HomeScreen,
   RequestsScreen,
+  BroadcastScreen,
 } from "./screens";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -83,6 +84,7 @@ const Navigator = () => {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Request" component={RequestsScreen} />
       <Stack.Screen name="Messages" component={ChatMessagesScreen} />
+      <Stack.Screen name="Broadcast" component={BroadcastScreen} />
     </Stack.Navigator>
   );
 };
